@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Playlists – Music{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>▶ Playlists</h1>
+    <span class="muted">{{ playlists|length }} playlist{{ '' if playlists|length == 1 else 's' }}</span>
+    <a class="btn btn-primary head-action" href="/music/playlists/new">+ New Playlist</a>
+  </div>
+
+  <p class="muted"><a href="/music">← All tracks</a></p>
+
+  {% if not playlists %}
+    <p class="muted empty">No playlists yet. Create one, then add songs to it.</p>
+  {% endif %}
+
+  <ul class="feed">
+    {% for p in playlists %}
+    <li class="card">
+      <div class="card-meta">
+        <span class="badge">{{ p.count }} track{{ '' if p.count == 1 else 's' }}</span>
+      </div>
+      <h2 class="card-title"><a href="/music/playlists/{{ p.slug }}">{{ p.title }}</a></h2>
+      {% if p.description %}<p class="summary">{{ p.description }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

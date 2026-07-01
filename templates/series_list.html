@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Series – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>📚 Series</h1>
+    <span class="muted">{{ series|length }} series</span>
+  </div>
+
+  <div class="series-sort">
+    <span class="muted">Sort by name:</span>
+    <a class="chip {{ 'active' if sort == 'az' else '' }}" href="/series?sort=az">A → Z</a>
+    <a class="chip {{ 'active' if sort == 'za' else '' }}" href="/series?sort=za">Z → A</a>
+  </div>
+
+  {% if not series %}
+    <p class="muted empty">No series yet. Give two or more posts the same
+      <em>Series name</em> in the editor to group them.</p>
+  {% endif %}
+
+  <ul class="feed">
+    {% for s in series %}
+    <li class="card">
+      <h2 class="card-title"><a href="/posts/{{ s.first_slug }}">{{ s.name }}</a></h2>
+      <div class="card-meta">
+        <span class="badge">{{ s.count }} part{{ '' if s.count == 1 else 's' }}</span>
+        <span class="muted">updated {{ s.latest }}</span>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

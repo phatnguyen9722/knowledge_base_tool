@@ -1,0 +1,33 @@
+# Knowledge Base Tool – configuration
+# All paths are relative to the project root unless absolute.
+
+server:
+  host: 127.0.0.1
+  port: 5050        # NB: avoid 5000 on macOS — taken by the AirPlay Receiver
+
+data:
+  # Directory holding the *.md posts (user data, lives outside the bundle).
+  posts_dir: posts
+  attachments_dir: attachments
+  tags_dir: tags
+  # Pasted images are stored here (sibling of posts/, served at /img).
+  img_dir: img
+  # TOEIC practice sets (separate from posts/).
+  toeic_dir: toeic
+  # Books/novels — one subfolder per collection, chapters inside.
+  books_dir: books
+  # Music — imported .mp3 files + their markdown metadata sidecars.
+  music_dir: music
+  # Quick notes (Title / date / content) with pin-to-favorite.
+  notes_dir: notes
+  # API documentation projects.
+  api_docs_dir: api-docs
+  # Saved bookmarks / links.
+  bookmarks_dir: bookmarks
+  # SQLite FTS5 search index (auto-generated).
+  db_path: .kb/search.db
+
+ui:
+  # vodka | midnight | sapphire | aegean | champagne | rose | amethyst
+  theme: vodka
+  page_size: 20       # posts per page in the list feed

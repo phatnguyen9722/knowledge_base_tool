@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}{{ lset.title }} – TOEIC Listening{% endblock %}
+
+{% block content %}
+  <article class="post toeic">
+    <a class="back" href="/toeic/listening">← Listening</a>
+
+    <header class="post-head">
+      <h1>{{ lset.title }}</h1>
+      <div class="post-meta">
+        <span class="badge">Part {{ lset.part }}</span>
+        <span class="badge badge-{{ 'published' if lset.format == 'new' else 'draft' }}">
+          {{ lset.format|upper }} FORMAT</span>
+        <span class="muted">{{ lset.item_count }} question{{ '' if lset.item_count == 1 else 's' }}</span>
+      </div>
+      <div class="post-actions">
+        <a class="btn" href="/toeic/listening/{{ lset.slug }}/edit">Edit</a>
+      </div>
+    </header>
+
+    {# ── Format / Part notes ─────────────────────────────────────────────── #}
+    {% if lset.part == 1 %}
+    <p class="muted listening-info">
+      📷 <strong>Photographs</strong> —
+      {% if lset.format == 'new' %}New format: 6 photos, 4 choices (A-D).
+      {% else %}Old format: 20 photos, 4 choices (A-D).{% endif %}
+      Listen to 4 statements and choose the one that best describes the photo.
+    </p>
+    {% elif lset.part == 2 %}
+    <p class="muted listening-info">
+      🗣️ <strong>Question-Response</strong> —
+      {% if lset.format == 'new' %}New format: 25 items, 3 choices (A-C).
+      {% else %}Old format: 30 items, 3 choices (A-C).{% endif %}
+      Choose the best response to the question or statement.
+    </p>
+    {% elif lset.part == 3 %}
+    <p class="muted listening-info">
+      💬 <strong>Short Conversations</strong> —
+      {% if lset.format == 'new' %}New format: 13 conversations × 3 Qs = 39 items (may include graphics &amp; 3-speaker).
+      {% else %}Old format: 10 conversations × 3 Qs = 30 items.{% endif %}
+    </p>
+    {% elif lset.part == 4 %}
+    <p class="muted listening-info">
+      📢 <strong>Short Talks</strong> —
+      {% if lset.format == 'new' %}New format: 10 talks × 3 Qs = 30 items (may include graphics).
+      {% else %}Old format: 10 talks × 3 Qs = 30 items.{% endif %}
+    </p>
+    {% endif %}
+
+    <div class="toeic-controls">
+      <button class="btn" id="toeic-toggle-all" type="button">Show all answers</button>
+    </div>
+
+    {# ────────────────────── PART 1 — Photographs ──────────────────────── #}
+    {% if lset.part == 1 %}
+    <div class="l-photo-grid">
+      {% for ph in lset.photographs %}
+      {% set qi = loop.index %}
+      <div class="l-photo-item toeic-q" data-correct="{{ ph.answer }}">
+        <div class="l-photo-top">
+          {% if ph.image_url %}
+          <img src="{{ ph.image_url }}" alt="Photo {{ qi }}" class="l-photo-img">
+          {% else %}
+          <div class="l-photo-placeholder">📷 No image</div>
+          {% endif %}
+          <div class="l-photo-controls">
+            <span class="l-q-num">{{ qi }}.</span>
+            {% if ph.audio_url %}
+            <audio controls preload="none" src="{{ ph.audio_url }}" class="l-audio"></audio>
+            {% endif %}
+          </div>
+        </div>
+        <div class="choices">
+          {% for c in ph.choices %}
+          <label class="choice" data-letter="{{ c.letter }}">
+            <input type="radio" name="ph{{ qi }}" value="{{ c.letter }}">
+            <span class="cl">{{ c.letter }}</span>
+            <span class="ct">{{ c.text }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="q-actions">
+          <button class="btn btn-ghost" type="button" data-answer-toggle>Show answer</button>
+          <span class="verdict"></span>
+        </div>
+        <div class="answer-box" hidden>
+          <p class="correct-line"><strong>Answer: {{ ph.answer }}</strong></p>
+          {% if ph.note_html %}<div class="markdown note">{{ ph.note_html | safe }}</div>{% endif %}
+        </div>
+      </div>
+      {% else %}
+      <p class="muted">No photographs yet. Add <code>::: photo</code> blocks in the editor.</p>
+      {% endfor %}
+    </div>
+
+    {# ────────────────────── PART 2 — Question-Response ────────────────── #}
+    {% elif lset.part == 2 %}
+    <ol class="toeic-questions">
+      {% for qr in lset.qr_pairs %}
+      {% set qi = loop.index %}
+      <li class="toeic-q" data-correct="{{ qr.answer }}">
+        <div class="l-qr-head">
+          <span class="l-q-num">{{ qi }}.</span>
+          {% if qr.audio_url %}
+          <audio controls preload="none" src="{{ qr.audio_url }}" class="l-audio"></audio>
+          {% endif %}
+        </div>
+        {% if qr.transcript %}
+        <p class="l-transcript">🗣️ <em>{{ qr.transcript }}</em></p>
+        {% endif %}
+        <div class="choices">
+          {% for c in qr.choices %}
+          <label class="choice" data-letter="{{ c.letter }}">
+            <input type="radio" name="qr{{ qi }}" value="{{ c.letter }}">
+            <span class="cl">{{ c.letter }}</span>
+            <span class="ct">{{ c.text }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="q-actions">
+          <button class="btn btn-ghost" type="button" data-answer-toggle>Show answer</button>
+          <span class="verdict"></span>
+        </div>
+        <div class="answer-box" hidden>
+          <p class="correct-line"><strong>Answer: {{ qr.answer }}</strong></p>
+          {% if qr.note_html %}<div class="markdown note">{{ qr.note_html | safe }}</div>{% endif %}
+        </div>
+      </li>
+      {% else %}
+      <p class="muted">No QR pairs yet. Add <code>::: qr</code> blocks in the editor.</p>
+      {% endfor %}
+    </ol>
+
+    {# ─────────────────── PARTS 3 & 4 — Groups ─────────────────────────── #}
+    {% elif lset.part in (3, 4) %}
+    {% set prefix = "Conversation" if lset.part == 3 else "Talk" %}
+    {% for grp in lset.groups %}
+    {% set gi = loop.index %}
+    <div class="l-group">
+      <div class="l-group-head">
+        <strong>{{ prefix }} {{ gi }}</strong>
+        {% if grp.audio_url %}
+        <audio controls preload="none" src="{{ grp.audio_url }}" class="l-audio"></audio>
+        {% endif %}
+      </div>
+      {% if grp.transcript %}
+      <details class="l-transcript-details">
+        <summary>Transcript</summary>
+        <pre class="l-transcript-body">{{ grp.transcript }}</pre>
+      </details>
+      {% endif %}
+      <ol class="toeic-questions l-group-qs" start="{{ loop.index0 * 3 + 1 if lset.part == 3 else loop.index0 * 3 + 1 }}">
+        {% for q in grp.questions %}
+        {% set abs_num = (gi - 1) * 3 + loop.index %}
+        <li class="toeic-q" data-correct="{{ q.answer }}">
+          {% if q.graphic_url %}
+          <img src="{{ q.graphic_url }}" alt="Graphic" class="l-graphic">
+          {% endif %}
+          <p class="q-prompt">{{ q.prompt }}</p>
+          <div class="choices">
+            {% for c in q.choices %}
+            <label class="choice" data-letter="{{ c.letter }}">
+              <input type="radio" name="g{{ gi }}q{{ loop.index }}" value="{{ c.letter }}">
+              <span class="cl">{{ c.letter }}</span>
+              <span class="ct">{{ c.text }}</span>
+            </label>
+            {% endfor %}
+          </div>
+          <div class="q-actions">
+            <button class="btn btn-ghost" type="button" data-answer-toggle>Show answer</button>
+            <span class="verdict"></span>
+          </div>
+          <div class="answer-box" hidden>
+            <p class="correct-line"><strong>Answer: {{ q.answer }}</strong></p>
+            {% if q.note_html %}<div class="markdown note">{{ q.note_html | safe }}</div>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ol>
+    </div>
+    {% else %}
+    <p class="muted">No groups yet. Add <code>::: group</code> blocks with nested
+      <code>::: cq</code> questions in the editor.</p>
+    {% endfor %}
+
+    {% endif %}
+  </article>
+{% endblock %}

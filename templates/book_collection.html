@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ collection.title }} – Books{% endblock %}
+
+{% block content %}
+  <article class="post">
+    <a class="back" href="/books">← Books</a>
+
+    <header class="collection-head">
+      {% if collection.cover %}
+      <img class="book-cover-lg" src="{{ collection.cover }}" alt="{{ collection.title }} cover">
+      {% endif %}
+      <div class="collection-meta">
+        <h1>{{ collection.title }}</h1>
+        <div class="post-meta">
+          {% if collection.author %}<span class="cat">{{ collection.author }}</span>{% endif %}
+          <span class="muted">{{ collection.chapter_count }} chapter{{ '' if collection.chapter_count == 1 else 's' }}</span>
+          {% if collection.created %}<span class="muted">· {{ collection.created }}</span>{% endif %}
+        </div>
+        {% if collection.description %}<p class="summary">{{ collection.description }}</p>{% endif %}
+        {% if collection.tags %}
+        <div class="card-tags">
+          {% for t in collection.tags %}<span class="tag">#{{ t }}</span>{% endfor %}
+        </div>
+        {% endif %}
+        <div class="post-actions">
+          <a class="btn btn-primary" href="/books/{{ collection.slug }}/new">+ New Chapter</a>
+          <a class="btn" href="/books/{{ collection.slug }}/edit">Edit</a>
+        </div>
+      </div>
+    </header>
+
+    {% if not collection.chapters %}
+      <p class="muted empty">No chapters yet. Add the first one →</p>
+    {% endif %}
+
+    <ol class="chapter-list">
+      {% for ch in collection.chapters %}
+      <li>
+        <a href="/books/{{ collection.slug }}/{{ ch.slug }}">{{ ch.title }}</a>
+        {% if ch.updated %}<span class="muted">· {{ ch.updated }}</span>{% endif %}
+      </li>
+      {% endfor %}
+    </ol>
+  </article>
+{% endblock %}

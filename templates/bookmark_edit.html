@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if bm else 'New' }} Bookmark – Knowledge Base{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post"
+        action="{{ '/bookmarks/' ~ bm.slug ~ '/edit' if bm else '/bookmarks/new' }}">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Title" required
+             value="{{ bm.title if bm else '' }}">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn" href="/bookmarks">Cancel</a>
+    </div>
+
+    <input type="url" name="url" class="full bm-url-input" placeholder="https://…" required
+           value="{{ bm.url if bm else '' }}">
+
+    <div class="editor-fields">
+      <input type="text" name="category" placeholder="Category"
+             list="bm-categories"
+             value="{{ bm.category if bm else '' }}">
+      <datalist id="bm-categories">
+        {% for cat in categories %}<option value="{{ cat }}">{% endfor %}
+      </datalist>
+      <input type="text" name="tags" placeholder="tags, comma, separated"
+             value="{{ bm.tags|join(', ') if bm else '' }}">
+    </div>
+
+    <input type="text" name="description" class="full"
+           placeholder="Short description (optional)"
+           value="{{ bm.description if bm else '' }}">
+
+    <textarea name="notes" class="toeic-content bm-notes"
+              placeholder="Notes (markdown, optional)…">{{ bm.notes if bm else '' }}</textarea>
+  </form>
+{% endblock %}

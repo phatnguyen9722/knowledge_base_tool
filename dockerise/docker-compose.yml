@@ -1,0 +1,24 @@
+# Convenience wrapper. Run from the PROJECT ROOT:
+#   docker compose -f ai-scratch/dockerise/docker-compose.yml up --build
+services:
+  kb-tool:
+    build:
+      context: ../..                       # project root
+      dockerfile: ai-scratch/dockerise/Dockerfile
+    image: kb-tool
+    container_name: kb-tool
+    ports:
+      - "5050:5050"
+    volumes:
+      - kb-data:/data                      # named volume; persists all content
+      # To use your existing local content instead, comment the line above and use:
+      # - ../../posts:/data/posts
+      # - ../../notes:/data/notes
+      # - ../../books:/data/books
+      # - ../../music:/data/music
+      # - ../../toeic:/data/toeic
+      # - ../../img:/data/img
+    restart: unless-stopped
+
+volumes:
+  kb-data:

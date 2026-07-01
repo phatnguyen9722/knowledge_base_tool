@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Music – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>🎵 Music</h1>
+    <span class="muted">{{ tracks|length }} track{{ '' if tracks|length == 1 else 's' }}</span>
+    <a class="btn" href="/music/playlists">▶ Playlists</a>
+    <form class="head-action import-form" method="post" action="/music/import"
+          enctype="multipart/form-data">
+      <label class="btn btn-primary">
+        + Import .mp3
+        <input type="file" name="file" accept="audio/mpeg,.mp3" hidden
+               onchange="this.form.submit()">
+      </label>
+    </form>
+  </div>
+
+  {% if not tracks %}
+    <p class="muted empty">No music yet. Import an <code>.mp3</code> — a markdown
+      file is generated so you can edit the author, year, type, and notes.</p>
+  {% endif %}
+
+  <ul class="feed">
+    {% for t in tracks %}
+    <li class="card track-card">
+      {% if t.cover %}
+      <img class="track-cover" src="{{ t.cover }}" alt="{{ t.title }} cover" loading="lazy">
+      {% else %}
+      <span class="track-cover track-cover--placeholder">🎵</span>
+      {% endif %}
+      <div class="track-body">
+      <div class="card-meta">
+        {% if t.type %}<span class="badge">{{ t.type }}</span>{% endif %}
+        {% if t.author %}<span class="cat">{{ t.author }}</span>{% endif %}
+        {% if t.year %}<time>{{ t.year }}</time>{% endif %}
+        {% if t.album %}<span class="muted">· {{ t.album }}</span>{% endif %}
+      </div>
+      <h2 class="card-title">{{ t.title }}</h2>
+      {% if t.audio_url %}
+      <audio controls preload="none" src="{{ t.audio_url }}"></audio>
+      {% else %}
+      <p class="muted">(audio file missing)</p>
+      {% endif %}
+      {% if t.notes %}<p class="summary">{{ t.notes }}</p>{% endif %}
+      {% if t.lyrics %}
+      <details class="lyrics-details">
+        <summary>Lyrics</summary>
+        <pre class="lyrics">{{ t.lyrics }}</pre>
+      </details>
+      {% endif %}
+      <div class="track-actions">
+        <a class="btn" href="/music/{{ t.slug }}/edit">Edit</a>
+      </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

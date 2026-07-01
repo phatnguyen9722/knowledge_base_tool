@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Bookmarks – Knowledge Base{% endblock %}
+
+{% block sidebar %}
+  <section class="facet">
+    <h2>Search</h2>
+    <form class="notes-search" action="/bookmarks" method="get" role="search">
+      {% for t in active_tags %}<input type="hidden" name="tag" value="{{ t }}">{% endfor %}
+      {% if active_category %}<input type="hidden" name="category" value="{{ active_category }}">{% endif %}
+      <input type="search" name="q" value="{{ q }}" placeholder="Title, URL, notes…"
+             autocomplete="off">
+    </form>
+  </section>
+
+  {% if categories %}
+  <section class="facet">
+    <h2>Category</h2>
+    <div class="chips">
+      {% for cat in categories %}
+      <a class="chip {{ 'active' if cat == active_category else '' }}"
+         href="/bookmarks?category={{ cat|urlencode }}{% if q %}&q={{ q|urlencode }}{% endif %}">{{ cat }}</a>
+      {% endfor %}
+      {% if active_category %}
+      <a class="chip" href="/bookmarks{% if q %}?q={{ q|urlencode }}{% endif %}">✕ all</a>
+      {% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="facet">
+    <h2>Tags</h2>
+    {% if active_tags %}<a class="clear" href="{{ clear_url }}">✕ clear tags</a>{% endif %}
+    <div class="tag-cloud">
+      {% for t in tag_cloud %}
+      <a href="{{ t.url }}" class="cloud-tag {{ 'active' if t.active else '' }}"
+         title="{{ t.count }} bookmark{{ '' if t.count == 1 else 's' }}">#{{ t.name }}</a>
+      {% else %}
+      <span class="muted">No tags yet</span>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>🔖 Bookmarks</h1>
+    <span class="muted">
+      {{ bookmarks|length }} link{{ '' if bookmarks|length == 1 else 's' }}
+      {%- if active_tags|length > 1 %} · AND{% endif %}
+    </span>
+    <a class="btn btn-primary head-action" href="/bookmarks/new">+ New</a>
+  </div>
+
+  {% if q or active_tags or active_category %}
+  <p class="muted">
+    Filtered{% if q %} by "{{ q }}"{% endif %}
+    {%- if active_category %} in {{ active_category }}{% endif %}
+    {%- if active_tags %} tags {% for t in active_tags %}#{{ t }} {% endfor %}{% endif %}
+    · <a href="/bookmarks">reset</a>
+  </p>
+  {% endif %}
+
+  {% if not bookmarks %}
+    <p class="muted empty">
+      {% if q or active_tags or active_category %}No bookmarks match.
+      {% else %}No bookmarks yet. Save your first link →{% endif %}
+    </p>
+  {% endif %}
+
+  <ul class="feed bm-list">
+    {% for bm in bookmarks %}
+    <li class="card bm-card">
+      <div class="bm-favicon-col">
+        <img class="bm-favicon" src="{{ bm.favicon_url }}" alt=""
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+             loading="lazy">
+        <span class="bm-favicon-fallback" style="display:none">🔖</span>
+      </div>
+      <div class="bm-body">
+        <div class="card-meta">
+          {% if bm.category %}<span class="cat">{{ bm.category }}</span>{% endif %}
+          {% if bm.created %}<time>{{ bm.created }}</time>{% endif %}
+        </div>
+        <h2 class="card-title bm-title">
+          <a href="{{ bm.url }}" target="_blank" rel="noopener noreferrer">{{ bm.title }}</a>
+          {% if bm.pinned %}<span title="Pinned">📌</span>{% endif %}
+        </h2>
+        <a class="bm-url muted" href="{{ bm.url }}" target="_blank" rel="noopener noreferrer"
+           title="{{ bm.url }}">{{ bm.domain }}</a>
+        {% if bm.description %}<p class="summary">{{ bm.description }}</p>{% endif %}
+        {% if bm.notes %}<p class="summary muted bm-notes-hint">has notes</p>{% endif %}
+        {% if bm.tags %}
+        <div class="card-tags">
+          {% for t in bm.tags %}
+          <a class="tag {{ 'active' if t in active_tags else '' }}"
+             href="/bookmarks?tag={{ t|urlencode }}">#{{ t }}</a>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <div class="bm-actions">
+          <a class="btn" href="/bookmarks/{{ bm.slug }}/edit">Edit</a>
+          <form method="post" action="/bookmarks/{{ bm.slug }}/pin" class="inline-form">
+            <button type="submit" class="btn" title="{{ 'Unpin' if bm.pinned else 'Pin' }}">
+              {{ '📌 Unpin' if bm.pinned else '📍 Pin' }}</button>
+          </form>
+          <form method="post" action="/bookmarks/{{ bm.slug }}/delete" class="inline-form"
+                onsubmit="return confirm('Delete this bookmark?')">
+            <button type="submit" class="btn btn-danger">Delete</button>
+          </form>
+        </div>
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

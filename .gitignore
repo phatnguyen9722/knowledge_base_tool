@@ -1,0 +1,48 @@
+# Knowledge Base Tool
+.kb/
+__pycache__/
+dist/
+build/
+*.spec
+*.pyc
+
+# Python virtual envs
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+
+# pytest
+.pytest_cache/
+
+ai-scratch/*
+!ai-scratch/.gitkeep
+
+music/*
+!music/.gitkeep
+
+posts/*
+!posts/.gitkeep
+
+img/*
+!img/.gitkeep
+
+books/*
+!books/.gitkeep
+
+bookmarks/*
+!bookmarks/.gitkeep
+
+notes/*
+!notes/.gitkeep
+
+toeic/*
+!toeic/audio
+!toeic/README.md
+
+tags/*
+!tags/.gitkeep
+
+api-docs/*
+!api-docs/github-api.md

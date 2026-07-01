@@ -1,0 +1,20 @@
+# Container config — all user data lives under /data (mount a volume there).
+# Absolute paths win over the app's base dir, so everything persists in /data.
+server:
+  host: 0.0.0.0          # listen on all interfaces inside the container
+  port: 5050
+
+data:
+  posts_dir: /data/posts
+  attachments_dir: /data/attachments
+  tags_dir: /data/tags
+  img_dir: /data/img
+  toeic_dir: /data/toeic
+  books_dir: /data/books
+  music_dir: /data/music
+  notes_dir: /data/notes
+  db_path: /data/.kb/search.db
+
+ui:
+  theme: vodka
+  page_size: 20

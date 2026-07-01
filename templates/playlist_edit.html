@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}New Playlist – Music{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post" action="/music/playlists/new">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Playlist title (e.g. Chill Vibes)" required>
+      <button type="submit" class="btn btn-primary">Create</button>
+      <a class="btn" href="/music/playlists">Cancel</a>
+    </div>
+    <input type="text" name="description" class="full" placeholder="Description (optional)">
+    <p class="muted editor-hint">Create the playlist, then add songs to it from its page.</p>
+  </form>
+{% endblock %}

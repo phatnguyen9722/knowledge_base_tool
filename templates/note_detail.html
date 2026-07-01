@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ note.title }} – Notes{% endblock %}
+
+{% block content %}
+  <article class="post note-detail note-theme-{{ note.theme }}">
+    <a class="back" href="/notes">← Notes</a>
+
+    <header class="post-head">
+      <h1>{% if note.pinned %}📌 {% endif %}{{ note.title }}</h1>
+      <div class="post-meta">
+        {% if note.date %}<span class="muted">{{ note.date }}</span>{% endif %}
+        <span class="badge">{{ note.theme }}</span>
+      </div>
+      {% if note.tags %}
+      <div class="card-tags">
+        {% for t in note.tags %}<a class="tag" href="/notes?tag={{ t|urlencode }}">#{{ t }}</a>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="post-actions">
+        <a class="btn" href="/notes/{{ note.slug }}/edit">Edit</a>
+        <form method="post" action="/notes/{{ note.slug }}/pin" class="inline-form">
+          <button type="submit" class="btn">{{ 'Unpin' if note.pinned else 'Pin' }}</button>
+        </form>
+        <form method="post" action="/notes/{{ note.slug }}/delete" class="inline-form"
+              onsubmit="return confirm('Delete this note?')">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </header>
+
+    <div class="markdown note-detail-body">
+      {{ content_html | safe }}
+    </div>
+  </article>
+{% endblock %}

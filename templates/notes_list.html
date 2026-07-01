@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Notes – Knowledge Base{% endblock %}
+
+{% block sidebar %}
+  <section class="facet">
+    <h2>Find</h2>
+    <form class="notes-search" action="/notes" method="get" role="search">
+      {% for t in active_tags %}<input type="hidden" name="tag" value="{{ t }}">{% endfor %}
+      <input type="search" name="q" value="{{ q }}" placeholder="Filter by name…"
+             autocomplete="off">
+    </form>
+  </section>
+
+  <section class="facet">
+    <h2>Tags</h2>
+    {% if active_tags %}<a class="clear" href="{{ clear_url }}">✕ clear tags</a>{% endif %}
+    <div class="tag-cloud">
+      {% for t in tag_cloud %}
+      <a href="{{ t.url }}" class="cloud-tag {{ 'active' if t.active else '' }}"
+         title="{{ t.count }} note{{ '' if t.count == 1 else 's' }}">#{{ t.name }}</a>
+      {% else %}
+      <span class="muted">No tags yet</span>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>🗒️ Notes</h1>
+    <span class="muted">{{ notes|length }} note{{ '' if notes|length == 1 else 's' }}{% if active_tags|length > 1 %} · all tags (AND){% endif %}</span>
+    <a class="btn btn-primary head-action" href="/notes/new">+ New Note</a>
+  </div>
+
+  {% if q or active_tags %}
+  <p class="muted">
+    Filtered{% if q %} by name “{{ q }}”{% endif %}{% if active_tags %} by {% for t in active_tags %}#{{ t }} {% endfor %}{% endif %}
+    · <a href="/notes">reset</a>
+  </p>
+  {% endif %}
+
+  {% if not notes %}
+    <p class="muted empty">{% if q or active_tags %}No notes match.{% else %}No notes yet. Jot something down →{% endif %}</p>
+  {% endif %}
+
+  <div class="notes-grid">
+    {% for n in notes %}
+    <article class="note-box note-theme-{{ n.theme }} {{ 'pinned' if n.pinned else '' }}">
+      <a class="note-open" href="/notes/{{ n.slug }}" aria-label="Open {{ n.title }}"></a>
+      <div class="note-box-head">
+        <h2 class="note-title">{{ n.title }}</h2>
+        <form method="post" action="/notes/{{ n.slug }}/pin" class="pin-form">
+          <button type="submit" class="pin-btn {{ 'on' if n.pinned else '' }}"
+                  title="{{ 'Unpin' if n.pinned else 'Pin to favorites' }}"
+                  aria-label="toggle pin">{{ '📌' if n.pinned else '📍' }}</button>
+        </form>
+      </div>
+      {% if n.date %}<time class="note-date muted">{{ n.date }}</time>{% endif %}
+      <div class="note-content markdown">{{ n.content | markdown | safe }}</div>
+      {% if n.tags %}
+      <div class="card-tags">
+        {% for t in n.tags %}<a class="tag {{ 'active' if t in active_tags else '' }}"
+           href="/notes?tag={{ t|urlencode }}">#{{ t }}</a>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="note-actions">
+        <a class="btn" href="/notes/{{ n.slug }}/edit">Edit</a>
+        <form method="post" action="/notes/{{ n.slug }}/delete"
+              onsubmit="return confirm('Delete this note?')">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+{% endblock %}

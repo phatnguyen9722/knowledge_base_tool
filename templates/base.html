@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Knowledge Base{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/icon.png">
+  <link rel="stylesheet" href="/static/style.css?v={{ asset_v() }}">
+  <!-- No-flash: apply theme + hide disabled features before first paint. -->
+  <style id="feature-hide-style"></style>
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem("kb-theme");
+        if (t) document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+      try {
+        var feats = JSON.parse(localStorage.getItem("kb-features") || "{}");
+        var css = "";
+        Object.keys(feats).forEach(function (app) {
+          if (feats[app] === false)
+            css += '[data-feature-app="' + app + '"]{display:none!important}';
+        });
+        if (css) document.getElementById("feature-hide-style").textContent = css;
+      } catch (e) {}
+    })();
+  </script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/">📚 Knowledge Base</a>
+    <div class="search-wrap">
+      <form class="search" action="/posts" method="get" role="search">
+        <input type="search" name="q" id="search-input"
+               placeholder="Search…  (press /)" value="{{ q|default('') }}"
+               autocomplete="off" aria-expanded="false"
+               aria-controls="search-results">
+      </form>
+      <div id="search-results" class="search-results" hidden></div>
+    </div>
+    <a class="btn" data-feature-app="bookmarks" href="/bookmarks"><span class="app-icon" data-app="bookmarks">🔖</span> Bookmarks</a>
+    <a class="btn" data-feature-app="api-docs" href="/api-docs"><span class="app-icon" data-app="api-docs">📄</span> API Docs</a>
+    <a class="btn" data-feature-app="notes"    href="/notes"><span class="app-icon" data-app="notes">🗒️</span> Notes</a>
+    <a class="btn" data-feature-app="books"    href="/books"><span class="app-icon" data-app="books">📖</span> Books</a>
+    <a class="btn" data-feature-app="music"    href="/music"><span class="app-icon" data-app="music">🎵</span> Music</a>
+    <a class="btn" data-feature-app="toeic"    href="/toeic"><span class="app-icon" data-app="toeic">🎧</span> TOEIC</a>
+    <a class="btn" data-feature-app="series"   href="/series"><span class="app-icon" data-app="series">📚</span> Series</a>
+    <!-- Fixed right-side controls — never move regardless of feature visibility -->
+    <div class="topbar-fixed">
+      <button class="btn btn-ghost" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+      <button class="btn btn-ghost" id="help-btn" title="Keyboard shortcuts (?)">?</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">{% block sidebar %}{% endblock %}</aside>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Settings — two-panel layout (sidebar nav + content area) -->
+  <div id="settings-modal" class="modal" hidden>
+    <div class="modal-card settings-card">
+
+      <!-- LEFT: sidebar navigation -->
+      <nav class="settings-sidebar">
+        <div class="settings-sidebar-title">Settings</div>
+        <button class="settings-nav-item active" data-panel="theme">🎨 Theme</button>
+        <button class="settings-nav-item" data-panel="features">⚡ Features</button>
+        <button class="settings-nav-item" data-panel="app-icons">🖼 App Icons</button>
+        <button class="settings-nav-item" data-panel="icon-library">📂 Icon Library</button>
+      </nav>
+
+      <!-- RIGHT: content panels (only one shown at a time) -->
+      <div class="settings-content">
+
+        <!-- Theme panel -->
+        <div class="settings-panel" id="panel-theme">
+          <h3 class="settings-panel-title">Theme</h3>
+          <p class="muted settings-panel-desc">Choose a colour scheme for the app.</p>
+          <div class="theme-grid">
+            <button class="theme-opt" data-theme-set="vodka">
+              <span class="swatch sw-vodka"></span><span>Vodka</span></button>
+            <button class="theme-opt" data-theme-set="midnight">
+              <span class="swatch sw-midnight"></span><span>Midnight</span></button>
+            <button class="theme-opt" data-theme-set="sapphire">
+              <span class="swatch sw-sapphire"></span><span>Sapphire</span></button>
+            <button class="theme-opt" data-theme-set="aegean">
+              <span class="swatch sw-aegean"></span><span>Aegean</span></button>
+            <button class="theme-opt" data-theme-set="champagne">
+              <span class="swatch sw-champagne"></span><span>Champagne</span></button>
+            <button class="theme-opt" data-theme-set="rose">
+              <span class="swatch sw-rose"></span><span>Rosé</span></button>
+            <button class="theme-opt" data-theme-set="amethyst">
+              <span class="swatch sw-amethyst"></span><span>Amethyst</span></button>
+          </div>
+        </div>
+
+        <!-- Features panel -->
+        <div class="settings-panel" id="panel-features" hidden>
+          <h3 class="settings-panel-title">Features</h3>
+          <p class="muted settings-panel-desc">
+            Toggle sections on or off. Hidden sections disappear from the menu
+            and homepage but remain accessible by URL.
+          </p>
+          <div id="features-panel-list"></div>
+        </div>
+
+        <!-- App Icons panel -->
+        <div class="settings-panel" id="panel-app-icons" hidden>
+          <h3 class="settings-panel-title">App Icons</h3>
+          <p class="muted settings-panel-desc">
+            Upload a custom icon (PNG/JPG/SVG) for each section, or reset to the default emoji.
+            Uploaded icons are saved to <code>img/icons/</code>.
+          </p>
+          <div id="icon-picker-list"></div>
+        </div>
+
+        <!-- Icon Library panel -->
+        <div class="settings-panel" id="panel-icon-library" hidden>
+          <h3 class="settings-panel-title">Icon Library</h3>
+          <p class="muted settings-panel-desc">
+            All previously uploaded icons. Apply one to any section or delete it.
+          </p>
+          <div id="icon-library" class="icon-library-grid"></div>
+        </div>
+
+        <div class="settings-footer">
+          <button class="btn" id="settings-close">Close</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Keyboard shortcuts help -->
+  <div id="help-modal" class="modal" hidden>
+    <div class="modal-card">
+      <h2>Keyboard shortcuts</h2>
+      <table class="shortcuts">
+        <tr><td><kbd>/</kbd></td><td>Focus search</td></tr>
+        <tr><td><kbd>n</kbd></td><td>New post</td></tr>
+        <tr><td><kbd>e</kbd></td><td>Edit current post</td></tr>
+        <tr><td><kbd>?</kbd></td><td>Toggle this help</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close search / help</td></tr>
+      </table>
+      <button class="btn" id="help-close">Close</button>
+    </div>
+  </div>
+
+  <button id="to-top" class="to-top" title="Back to top" aria-label="Back to top">↑</button>
+
+  <script src="/static/app.js?v={{ asset_v() }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

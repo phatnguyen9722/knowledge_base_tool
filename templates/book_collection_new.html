@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}New Collection – Books{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post" action="/books/new">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Collection title (e.g. Harry Potter)" required>
+      <button type="submit" class="btn btn-primary">Create</button>
+      <a class="btn" href="/books">Cancel</a>
+    </div>
+
+    <div class="editor-fields">
+      <input type="text" name="author" placeholder="Author (optional)">
+      <input type="text" name="tags" placeholder="tags, comma, separated">
+    </div>
+    <input type="text" name="description" class="full"
+           placeholder="Short description (optional)">
+
+    <div class="cover-field">
+      <label class="cover-label">Cover image
+        <input type="file" accept="image/*" data-cover-file>
+      </label>
+      <input type="text" name="cover" id="cover-url" class="full"
+             placeholder="…or paste an image URL (e.g. /img/abc.png)">
+      <img id="cover-preview" class="cover-preview" alt="cover preview" hidden>
+    </div>
+
+    <p class="muted editor-hint">
+      Create the collection first; you can add chapters (and change the cover) afterwards.
+    </p>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script>initCoverUpload();</script>
+{% endblock %}

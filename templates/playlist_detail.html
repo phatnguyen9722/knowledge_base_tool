@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}{{ playlist.title }} – Playlists{% endblock %}
+
+{% block content %}
+  <article class="post">
+    <a class="back" href="/music/playlists">← Playlists</a>
+
+    <header class="post-head">
+      <h1>▶ {{ playlist.title }}</h1>
+      <div class="post-meta">
+        <span class="muted">{{ playlist.count }} track{{ '' if playlist.count == 1 else 's' }}</span>
+      </div>
+      {% if playlist.description %}<p class="summary">{{ playlist.description }}</p>{% endif %}
+      <div class="post-actions">
+        <form method="post" action="/music/playlists/{{ playlist.slug }}/delete" class="inline-form"
+              onsubmit="return confirm('Delete this playlist? (the songs are kept)')">
+          <button type="submit" class="btn btn-danger">Delete playlist</button>
+        </form>
+      </div>
+    </header>
+
+    {# Add a song #}
+    {% if available %}
+    <form class="add-track-form" method="post" action="/music/playlists/{{ playlist.slug }}/add">
+      <select name="track" required>
+        <option value="" disabled selected>Add a song…</option>
+        {% for t in available %}
+        <option value="{{ t.slug }}">{{ t.title }}{% if t.author %} — {{ t.author }}{% endif %}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn">+ Add</button>
+    </form>
+    {% else %}
+    <p class="muted">All tracks are already in this playlist (or none imported yet).</p>
+    {% endif %}
+
+    {% if not playlist.tracks %}
+      <p class="muted empty">No songs yet — add one above.</p>
+    {% endif %}
+
+    {# Play-all continuous player (auto-advances through the playlist) #}
+    {% set playable = playlist.tracks | selectattr('audio_url') | list %}
+    {% if playable %}
+    <div class="play-all" id="play-all">
+      <button type="button" class="btn btn-primary" id="pa-play">▶ Play all</button>
+      <span class="pa-now muted">Ready — {{ playable|length }} track{{ '' if playable|length == 1 else 's' }}</span>
+      <audio id="pa-audio" controls preload="none"></audio>
+      <script type="application/json" id="pa-data">
+        [{% for t in playable %}{"slug": {{ t.slug|tojson }}, "title": {{ t.title|tojson }}, "url": {{ t.audio_url|tojson }}}{{ "," if not loop.last }}{% endfor %}]
+      </script>
+    </div>
+    {% endif %}
+
+    <ol class="playlist-tracks">
+      {% for t in playlist.tracks %}
+      <li class="card track-card" data-slug="{{ t.slug }}">
+        <div class="reorder">
+          <form method="post" action="/music/playlists/{{ playlist.slug }}/move" class="inline-form">
+            <input type="hidden" name="track" value="{{ t.slug }}">
+            <input type="hidden" name="direction" value="up">
+            <button type="submit" class="reorder-btn" title="Move up"
+                    {{ 'disabled' if loop.first else '' }}>▲</button>
+          </form>
+          <form method="post" action="/music/playlists/{{ playlist.slug }}/move" class="inline-form">
+            <input type="hidden" name="track" value="{{ t.slug }}">
+            <input type="hidden" name="direction" value="down">
+            <button type="submit" class="reorder-btn" title="Move down"
+                    {{ 'disabled' if loop.last else '' }}>▼</button>
+          </form>
+        </div>
+        {% if t.cover %}
+        <img class="track-cover" src="{{ t.cover }}" alt="" loading="lazy">
+        {% else %}
+        <span class="track-cover track-cover--placeholder">🎵</span>
+        {% endif %}
+        <div class="track-body">
+          <h2 class="card-title">{{ t.title }}{% if t.author %} <span class="muted">— {{ t.author }}</span>{% endif %}</h2>
+          {% if t.audio_url %}<audio controls preload="none" src="{{ t.audio_url }}"></audio>{% endif %}
+          <div class="track-actions">
+            <a class="btn" href="/music/{{ t.slug }}/edit">Edit</a>
+            <form method="post" action="/music/playlists/{{ playlist.slug }}/remove" class="inline-form">
+              <input type="hidden" name="track" value="{{ t.slug }}">
+              <button type="submit" class="btn btn-danger">Remove</button>
+            </form>
+          </div>
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </article>
+{% endblock %}
+
+{% block scripts %}
+<script>initPlaylistPlayer();</script>
+{% endblock %}

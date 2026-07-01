@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} – API Docs{% endblock %}
+
+{% block content %}
+  <article class="post">
+    <a class="back" href="/api-docs">← API Docs</a>
+
+    {# ── Project header ─────────────────────────────────────────────────── #}
+    <header class="post-head">
+      <h1>{{ project.title }}</h1>
+      <div class="post-meta">
+        {% if project.version %}<span class="cat">v{{ project.version }}</span>{% endif %}
+        <span class="muted">{{ project.endpoint_count }} endpoint{{ '' if project.endpoint_count == 1 else 's' }}</span>
+        {% if project.updated %}<time>updated {{ project.updated }}</time>{% endif %}
+      </div>
+      {% if project.base_url %}
+      <p class="api-base-url-block">
+        <span class="muted">Base URL:</span>
+        <code class="api-url-value">{{ project.base_url }}</code>
+        <button class="btn copy-plain" data-copy="{{ project.base_url }}" title="Copy">⎘</button>
+      </p>
+      {% endif %}
+      {% if project.auth %}
+      <p class="api-auth"><span class="muted">Auth:</span> {{ project.auth }}</p>
+      {% endif %}
+      {% if project.description %}
+      <p class="summary">{{ project.description }}</p>
+      {% endif %}
+      {% if project.tags %}
+      <div class="card-tags">
+        {% for t in project.tags %}<span class="tag">#{{ t }}</span>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="post-actions">
+        <a class="btn" href="/api-docs/{{ project.slug }}/edit">Edit</a>
+        <form method="post" action="/api-docs/{{ project.slug }}/delete" class="inline-form"
+              onsubmit="return confirm('Delete this API project?')">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </header>
+
+    {# ── Project notes (markdown before first endpoint block) ────────────── #}
+    {% if project.notes_html %}
+    <div class="markdown api-notes">{{ project.notes_html | safe }}</div>
+    {% endif %}
+
+    {# ── Endpoint filter ─────────────────────────────────────────────────── #}
+    {% if project.endpoints %}
+    <div class="api-filter-bar">
+      <span class="muted">Filter:</span>
+      <div class="api-method-filters">
+        <button class="btn api-method-filter active" data-method="">All</button>
+        {% for m in ['GET','POST','PUT','PATCH','DELETE'] %}
+        {% if project.endpoints | selectattr('method', 'equalto', m) | list %}
+        <button class="btn api-method-filter method-badge method-{{ m|lower }}"
+                data-method="{{ m }}">{{ m }}</button>
+        {% endif %}
+        {% endfor %}
+      </div>
+      <input type="search" id="api-search" placeholder="Filter by path or title…"
+             class="api-search-input">
+    </div>
+    {% endif %}
+
+    {# ── Endpoint cards ──────────────────────────────────────────────────── #}
+    <div class="api-endpoints" id="api-endpoints">
+      {% if not project.endpoints %}
+      <p class="muted empty">No endpoints yet. Click <strong>Edit</strong> and add
+        <code>::: endpoint</code> blocks.</p>
+      {% endif %}
+
+      {% for ep in project.endpoints %}
+      <div class="api-ep-card" data-method="{{ ep.method }}"
+           data-path="{{ ep.path }}" data-title="{{ ep.title|lower }}">
+        {# ── Card header (always visible) ──────────────────────────────── #}
+        <button class="api-ep-toggle" type="button" aria-expanded="false">
+          <span class="method-badge method-{{ ep.method_class }}">{{ ep.method }}</span>
+          <code class="api-ep-path">{{ project.base_url }}{{ ep.path }}</code>
+          {% if ep.title %}<span class="api-ep-title">{{ ep.title }}</span>{% endif %}
+          <span class="api-ep-chevron">▾</span>
+        </button>
+
+        {# ── Expanded body ─────────────────────────────────────────────── #}
+        <div class="api-ep-body" hidden>
+          {% if ep.description %}
+          <p class="api-ep-desc">{{ ep.description }}</p>
+          {% endif %}
+          {% if ep.auth %}
+          <p class="api-ep-auth"><span class="muted">Auth:</span> {{ ep.auth }}</p>
+          {% endif %}
+
+          {# Params #}
+          {% set param_groups = ep.param_groups %}
+          {% for loc in ['path', 'query', 'header', 'body'] %}
+          {% if param_groups[loc] %}
+          <div class="api-param-group">
+            <h4 class="api-param-loc">{{ loc | capitalize }} Parameters</h4>
+            <table class="api-param-table">
+              <thead>
+                <tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr>
+              </thead>
+              <tbody>
+                {% for p in param_groups[loc] %}
+                <tr class="{{ 'required' if p.required else '' }}">
+                  <td><code class="api-param-name">{{ p.name }}</code></td>
+                  <td><span class="api-type">{{ p.type }}</span></td>
+                  <td>
+                    {% if p.required %}
+                    <span class="api-required">required</span>
+                    {% else %}
+                    <span class="api-optional">optional</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ p.description }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% endif %}
+          {% endfor %}
+
+          {# Responses #}
+          {% if ep.responses %}
+          <div class="api-responses">
+            <h4 class="api-param-loc">Responses</h4>
+            {% for resp in ep.responses %}
+            <div class="api-resp">
+              <div class="api-resp-head">
+                <span class="api-status api-status-{{ (resp.status // 100) }}xx">{{ resp.status }}</span>
+                <span class="api-resp-desc">{{ resp.description }}</span>
+              </div>
+              {% if resp.example %}
+              <pre class="api-resp-example">{{ resp.example }}</pre>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </article>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Toggle expand/collapse per endpoint card
+document.querySelectorAll(".api-ep-toggle").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    const body = btn.nextElementSibling;
+    const open = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!open));
+    body.hidden = open;
+    btn.querySelector(".api-ep-chevron").textContent = open ? "▾" : "▴";
+  });
+});
+
+// Method filter chips
+document.querySelectorAll(".api-method-filter").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    const method = btn.getAttribute("data-method");
+    document.querySelectorAll(".api-method-filter").forEach(function (b) {
+      b.classList.toggle("active", b === btn);
+    });
+    applyFilters();
+  });
+});
+
+// Path / title search
+const searchInput = document.getElementById("api-search");
+if (searchInput) {
+  searchInput.addEventListener("input", applyFilters);
+}
+
+function applyFilters() {
+  const activeMethod = (document.querySelector(".api-method-filter.active") || {}).getAttribute("data-method") || "";
+  const q = searchInput ? searchInput.value.trim().toLowerCase() : "";
+  document.querySelectorAll(".api-ep-card").forEach(function (card) {
+    const matchMethod = !activeMethod || card.getAttribute("data-method") === activeMethod;
+    const matchQ = !q || card.getAttribute("data-path").toLowerCase().includes(q)
+                      || card.getAttribute("data-title").includes(q);
+    card.hidden = !(matchMethod && matchQ);
+  });
+}
+
+// Copy plain text buttons
+document.addEventListener("click", function (e) {
+  const btn = e.target.closest(".copy-plain");
+  if (!btn) return;
+  const text = btn.getAttribute("data-copy") || "";
+  navigator.clipboard && navigator.clipboard.writeText(text).then(function () {
+    const orig = btn.textContent;
+    btn.textContent = "✓";
+    setTimeout(function () { btn.textContent = orig; }, 1200);
+  });
+});
+</script>
+{% endblock %}

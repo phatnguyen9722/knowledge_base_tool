@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{% if q %}Search: {{ q }}{% elif active_tags %}#{{ active_tags|join(' #') }}{% else %}All posts{% endif %} – Knowledge Base{% endblock %}
+
+{% block sidebar %}
+  <section class="facet">
+    <h2>Status</h2>
+    <div class="chips">
+      {% for s in status_chips %}
+      <a class="chip {{ 'active' if s.active else '' }}" href="{{ s.url }}">{{ s.name }}</a>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if cat_chips %}
+  <section class="facet">
+    <h2>Category</h2>
+    <div class="chips">
+      {% for c in cat_chips %}
+      <a class="chip {{ 'active' if c.active else '' }}" href="{{ c.url }}">{{ c.name }} <span class="count">{{ c.count }}</span></a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="facet">
+    <h2>Tags</h2>
+    {% if active_tags %}<a class="clear" href="{{ clear_url }}">✕ clear tags</a>{% endif %}
+    <div class="tag-cloud">
+      {% for t in tag_cloud %}
+      <a href="{{ t.url }}"
+         class="cloud-tag {{ 'active' if t.active else '' }}"
+         style="font-size: {{ [0.8 + t.count * 0.08, 1.6]|min }}rem"
+         title="{{ t.count }} post{{ '' if t.count == 1 else 's' }}">#{{ t.name }}</a>
+      {% else %}
+      <span class="muted">No tags yet</span>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    {% if q %}
+      <h1>Results for “{{ q }}”</h1>
+    {% elif active_tags %}
+      <h1>{% for t in active_tags %}#{{ t }} {% endfor %}</h1>
+    {% else %}
+      <h1>Posts</h1>
+    {% endif %}
+    <span class="muted">{{ total }} post{{ '' if total == 1 else 's' }}{% if active_tags|length > 1 %} · all tags (AND){% endif %}</span>
+    <a class="btn btn-primary head-action" href="/new">+ New post</a>
+  </div>
+
+  {% if not posts %}
+    <p class="muted empty">Nothing here yet. <a href="/new">Write your first post →</a></p>
+  {% endif %}
+
+  <ul class="feed">
+    {% for post in posts %}
+    <li class="card">
+      <div class="card-meta">
+        {% if post.pinned %}<span class="pin" title="Pinned">📌</span>{% endif %}
+        <span class="badge badge-{{ post.status.value }}">{{ post.status.value }}</span>
+        <span class="cat">{{ post.category }}</span>
+        <time>{{ post.updated }}</time>
+      </div>
+      <h2 class="card-title"><a href="/posts/{{ post.slug }}">{{ post.title }}</a></h2>
+      {% if post.summary %}<p class="summary">{{ post.summary }}</p>{% endif %}
+      <div class="card-tags">
+        {% for t in post.tags %}<a href="/posts?tag={{ t|urlencode }}" class="tag {{ 'active' if t in active_tags else '' }}">#{{ t }}</a>{% endfor %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  {% if pages > 1 %}
+  <nav class="pager">
+    {% if prev_url %}<a href="{{ prev_url }}">← Prev</a>{% endif %}
+    <span class="muted">Page {{ page }} / {{ pages }}</span>
+    {% if next_url %}<a href="{{ next_url }}">Next →</a>{% endif %}
+  </nav>
+  {% endif %}
+{% endblock %}

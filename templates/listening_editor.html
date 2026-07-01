@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if lset else 'New' }} Listening Set – TOEIC{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post"
+        action="{{ '/toeic/listening/' ~ lset.slug ~ '/edit' if lset else '/toeic/listening/new' }}">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Title (e.g. Part 1 — Photographs Set 1)" required
+             value="{{ lset.title if lset else '' }}">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn" href="{{ '/toeic/listening/' ~ lset.slug if lset else '/toeic/listening' }}">Cancel</a>
+    </div>
+
+    <div class="editor-fields">
+      <select name="part" title="TOEIC Part">
+        {% for p, label in [(1,'Part 1 — Photographs'), (2,'Part 2 — Q-Response'),
+                            (3,'Part 3 — Conversations'), (4,'Part 4 — Short Talks')] %}
+        <option value="{{ p }}" {{ 'selected' if lset and lset.part == p else ('selected' if not lset and p == default_part else '') }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="format" title="TOEIC format">
+        <option value="new" {{ 'selected' if not lset or lset.format == 'new' else '' }}>New Format (post-2016)</option>
+        <option value="old" {{ 'selected' if lset and lset.format == 'old' else '' }}>Old Format (pre-2016)</option>
+      </select>
+    </div>
+    <input type="text" name="summary" class="full" placeholder="Short summary (optional)"
+           value="{{ lset.summary if lset else '' }}">
+
+    {# Audio upload widget #}
+    <div class="listening-upload-bar">
+      <span class="muted">Upload audio:</span>
+      <input type="file" id="toeic-audio-file" accept="audio/*,.mp3,.m4a,.ogg,.wav">
+      <span id="toeic-audio-status" class="muted">select a file to upload</span>
+      <button type="button" class="btn" id="toeic-audio-copy" hidden>Copy URL</button>
+      <code id="toeic-audio-url" class="muted" hidden></code>
+    </div>
+
+    <textarea name="content" id="md-input" class="toeic-content"
+              placeholder="Write listening blocks here…">{{ default_body }}</textarea>
+
+    {# Block format guide #}
+    <details class="listening-guide">
+      <summary>Format guide (click to expand)</summary>
+      <div class="markdown">
+        <h4>Part 1 — Photographs</h4>
+        <pre>::: photo
+image: /img/your-photo.jpg
+audio: /toeic-audio/p1-q1.mp3
+- A. A woman is sitting at a desk.
+- B. A man is standing near a window.
+- C. Books are stacked on the floor.
+- D. A lamp is on a table.
+answer: A
+note: The woman is clearly seated at her desk.
+:::</pre>
+        <h4>Part 2 — Question-Response</h4>
+        <pre>::: qr
+audio: /toeic-audio/p2-q1.mp3
+transcript: "Have you seen the report?"
+- A. Yes, it was impressive.
+- B. No, the office is closed.
+- C. It takes about an hour.
+answer: A
+note: Only (A) directly answers the question.
+:::</pre>
+        <h4>Parts 3 & 4 — Conversations / Short Talks</h4>
+        <pre>::: group
+audio: /toeic-audio/p3-c1.mp3
+
+Speaker 1: ...transcript line...
+Speaker 2: ...transcript line...
+
+::: cq
+What does the speaker want to do?
+- A. Option one
+- B. Option two
+- C. Option three
+- D. Option four
+answer: B
+graphic: /img/optional-table.png
+note: Explanation here.
+:::
+
+::: cq
+Second question...
+:::
+:::</pre>
+        <p class="muted">Upload audio files using the "Upload audio" bar above, then paste
+          the returned URL into the <code>audio:</code> or <code>graphic:</code> field.</p>
+      </div>
+    </details>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const fileInput = document.getElementById("toeic-audio-file");
+  const status = document.getElementById("toeic-audio-status");
+  const urlEl = document.getElementById("toeic-audio-url");
+  const copyBtn = document.getElementById("toeic-audio-copy");
+  if (!fileInput) return;
+  fileInput.addEventListener("change", function () {
+    const file = fileInput.files && fileInput.files[0];
+    if (!file) return;
+    status.textContent = "uploading…";
+    const form = new FormData();
+    form.append("file", file, file.name);
+    fetch("/api/upload-audio", { method: "POST", body: form })
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(data => {
+        status.textContent = "uploaded:";
+        urlEl.textContent = data.url;
+        urlEl.hidden = false;
+        copyBtn.hidden = false;
+        copyBtn.onclick = () => {
+          navigator.clipboard && navigator.clipboard.writeText(data.url)
+            .then(() => { copyBtn.textContent = "Copied!"; setTimeout(() => { copyBtn.textContent = "Copy URL"; }, 1500); })
+            .catch(() => {});
+        };
+      })
+      .catch(e => { status.textContent = "upload failed (" + e + ")"; });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if project else 'New' }} API Project – Knowledge Base{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post"
+        action="{{ '/api-docs/' ~ project.slug ~ '/edit' if project else '/api-docs/new' }}">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Project title (e.g. SonarQube API)" required
+             value="{{ project.title if project else '' }}">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn" href="{{ '/api-docs/' ~ project.slug if project else '/api-docs' }}">Cancel</a>
+    </div>
+
+    <div class="editor-fields">
+      <input type="text" name="base_url" placeholder="Base URL (e.g. https://api.example.com/v1)"
+             value="{{ project.base_url if project else '' }}">
+      <input type="text" name="version" placeholder="Version (e.g. 1.0.0)"
+             value="{{ project.version if project else '' }}">
+      <input type="text" name="auth" placeholder="Auth type (e.g. Bearer token)"
+             value="{{ project.auth if project else '' }}">
+      <input type="text" name="tags" placeholder="tags, comma, separated"
+             value="{{ project.tags|join(', ') if project else '' }}">
+    </div>
+    <input type="text" name="description" class="full" placeholder="Short description"
+           value="{{ project.description if project else '' }}">
+
+    <textarea name="content" class="toeic-content api-editor"
+              placeholder="Write API endpoint blocks here…">{{ content }}</textarea>
+
+    <details class="listening-guide">
+      <summary>Format guide — how to write endpoint blocks</summary>
+      <div class="markdown">
+        <pre>::: endpoint
+method: GET | POST | PUT | DELETE | PATCH
+path: /resource/{id}
+title: Short title
+description: What this endpoint does.
+auth: Bearer token   (optional override)
+
+param: &lt;name&gt; | &lt;location&gt; | &lt;type&gt; | required/optional | description
+  locations: query, body, path, header
+  types: string, integer, boolean, array, object, number
+
+response: 200 | Success
+{
+  "id": 1,
+  "name": "example"
+}
+
+response: 400 | Bad Request
+{"error": "Validation failed"}
+:::</pre>
+        <p>You can add free-form markdown <strong>above</strong> the first
+          <code>::: endpoint</code> block as project-level notes.</p>
+      </div>
+    </details>
+  </form>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Edit {{ track.title }} – Music{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post" action="/music/{{ track.slug }}/edit">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Title" required value="{{ track.title }}">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn" href="/music">Cancel</a>
+    </div>
+
+    {% if track.audio_url %}
+    <audio controls preload="none" src="{{ track.audio_url }}" class="edit-audio"></audio>
+    {% endif %}
+
+    <div class="editor-fields">
+      <input type="text" name="author" placeholder="Author / artist" value="{{ track.author }}">
+      <input type="text" name="year" placeholder="Year" value="{{ track.year }}">
+      <input type="text" name="type" placeholder="Type / genre" value="{{ track.type }}">
+      <input type="text" name="album" placeholder="Album" value="{{ track.album }}">
+    </div>
+    <input type="text" name="notes" class="full" placeholder="Short note (optional)"
+           value="{{ track.notes }}">
+
+    <div class="cover-field">
+      <label class="cover-label">Cover image
+        <input type="file" accept="image/*" data-cover-file>
+      </label>
+      <input type="text" name="cover" id="cover-url" class="full"
+             placeholder="…or paste an image URL (e.g. /img/abc.png)"
+             value="{{ track.cover }}">
+      <img id="cover-preview" class="cover-preview" alt="cover preview"
+           {{ '' if track.cover else 'hidden' }}
+           {% if track.cover %}src="{{ track.cover }}"{% endif %}>
+    </div>
+
+    <label class="cover-label">Lyrics</label>
+    <textarea name="lyrics" class="toeic-content"
+              placeholder="Paste the lyrics here… (line breaks are preserved)">{{ track.lyrics }}</textarea>
+  </form>
+
+  <form method="post" action="/music/{{ track.slug }}/delete"
+        onsubmit="return confirm('Delete this track and its audio file?')">
+    <button type="submit" class="btn btn-danger">Delete track</button>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script>initCoverUpload();</script>
+{% endblock %}

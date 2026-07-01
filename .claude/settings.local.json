@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p app tests posts attachments tags .kb static templates ai-scratch/reports)",
+      "Bash(touch posts/.gitkeep attachments/.gitkeep tags/.gitkeep)",
+      "Bash(python3 -m venv .venv)",
+      "Bash(.venv/bin/pip install *)",
+      "Bash(.venv/bin/python -m pytest tests/ -v)",
+      "mcp__plugin_context-mode_context-mode__ctx_insight",
+      "Bash(.venv/bin/python -c \"import fastapi, mistune, jinja2, multipart, httpx; print\\('imports ok'\\)\")",
+      "Bash(.venv/bin/python -m pytest tests/ -q)",
+      "Bash(chmod +x build.sh)",
+      "Bash(.venv/bin/python -m py_compile launcher.py)",
+      "Bash(.venv/bin/python cli.py --help)",
+      "Bash(lsof -nP -iTCP:5000 -sTCP:LISTEN)",
+      "Bash(curl -sI http://127.0.0.1:5000)",
+      "Bash(lsof -nP -iTCP:5050 -sTCP:LISTEN)",
+      "Bash(.venv/bin/python *)",
+      "Bash(node --check static/app.js)",
+      "Bash(cd *)",
+      "Bash(python3 -)",
+      "Bash(docker --version)",
+      "Bash(docker build *)",
+      "Bash(docker rm *)",
+      "Bash(docker run *)",
+      "Bash(docker volume *)",
+      "Bash(docker image *)"
+    ]
+  }
+}

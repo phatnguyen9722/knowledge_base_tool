@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if post else 'New' }} post – Knowledge Base{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post"
+        action="{{ '/edit/' ~ post.slug if post else '/new' }}">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Title" required
+             value="{{ post.title if post else '' }}">
+      <button type="submit" class="btn btn-primary">Save</button>
+      <a class="btn" href="{{ '/posts/' ~ post.slug if post else '/' }}">Cancel</a>
+    </div>
+
+    <div class="editor-fields">
+      <input type="text" name="category" placeholder="Category"
+             value="{{ post.category if post else 'General' }}">
+      <input type="text" name="tags" placeholder="tags, comma, separated"
+             value="{{ post.tags|join(', ') if post else '' }}">
+      <select name="status">
+        {% for s in ['published', 'draft', 'archived'] %}
+        <option value="{{ s }}" {{ 'selected' if post and post.status.value == s else '' }}>{{ s }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="editor-fields">
+      <input type="text" name="series" placeholder="Series name (optional)"
+             value="{{ post.series if post else '' }}">
+      <input type="number" name="series_order" placeholder="Order" title="Position in the series"
+             value="{{ post.series_order if post else 0 }}">
+    </div>
+    <input type="text" name="summary" placeholder="Short summary (optional)"
+           class="full" value="{{ post.summary if post else '' }}">
+
+    <div class="editor-panes">
+      <textarea name="content" id="md-input"
+                placeholder="Write markdown here…  (tip: paste an image to upload it)">{{ post.content if post else '' }}</textarea>
+      <div class="preview markdown" id="md-preview"></div>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>initEditor();</script>
+{% endblock %}

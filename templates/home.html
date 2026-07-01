@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Home – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="home-hero">
+    <h1>Knowledge Base</h1>
+    <p class="muted">Everything in one place — pick a section to get started.</p>
+  </div>
+
+  <div class="home-grid">
+    {% for f in features %}
+    <a class="home-card" href="{{ f.href }}" data-feature-app="{{ f.app }}">
+      <span class="home-icon app-icon" data-app="{{ f.app }}">{{ f.icon }}</span>
+      <span class="home-card-title">{{ f.title }}</span>
+      <span class="home-card-desc">{{ f.desc }}</span>
+      <span class="home-card-count">{{ f.count }} item{{ '' if f.count == 1 else 's' }}</span>
+    </a>
+    {% endfor %}
+  </div>
+{% endblock %}

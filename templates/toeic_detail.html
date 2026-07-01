@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ set.title }} – TOEIC{% endblock %}
+
+{% block content %}
+  <article class="post toeic">
+    <a class="back" href="/toeic">← TOEIC</a>
+
+    <header class="post-head">
+      <h1>{{ set.title }}</h1>
+      <div class="post-meta">
+        <span class="badge">Part {{ set.part }}</span>
+        <span class="muted">{{ set.questions|length }} questions</span>
+      </div>
+    </header>
+
+    {% if set.passage_html %}
+    <div class="toeic-passage markdown">{{ set.passage_html | safe }}</div>
+    {% endif %}
+
+    <div class="toeic-controls">
+      <button class="btn" id="toeic-toggle-all" type="button">Show all answers</button>
+    </div>
+
+    <ol class="toeic-questions">
+      {% for q in set.questions %}
+      {% set qi = loop.index %}
+      <li class="toeic-q" data-correct="{{ q.answer }}">
+        <p class="q-prompt">{{ q.prompt }}</p>
+        <div class="choices">
+          {% for c in q.choices %}
+          <label class="choice" data-letter="{{ c.letter }}">
+            <input type="radio" name="q{{ qi }}" value="{{ c.letter }}">
+            <span class="cl">{{ c.letter }}</span>
+            <span class="ct">{{ c.text }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="q-actions">
+          <button class="btn btn-ghost" type="button" data-answer-toggle>Show answer</button>
+          <span class="verdict"></span>
+        </div>
+        <div class="answer-box" hidden>
+          <p class="correct-line"><strong>Correct answer: {{ q.answer }}</strong></p>
+          {% if q.note_html %}<div class="markdown note">{{ q.note_html | safe }}</div>{% endif %}
+        </div>
+      </li>
+      {% endfor %}
+    </ol>
+  </article>
+{% endblock %}

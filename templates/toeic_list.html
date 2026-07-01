@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}TOEIC – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>🎧 TOEIC Practice</h1>
+    <span class="muted">{{ sets|length }} reading set{{ '' if sets|length == 1 else 's' }}</span>
+    <a class="btn" href="/toeic/listening">🎵 Listening (Parts 1-4)</a>
+    <a class="btn btn-primary head-action" href="/toeic/new">+ New TOEIC</a>
+  </div>
+
+  {% if not sets %}
+    <p class="muted empty">No TOEIC sets yet. Drop a markdown file in the
+      <code>toeic/</code> folder (see the format in <code>toeic/README.md</code>).</p>
+  {% endif %}
+
+  <ul class="feed">
+    {% for s in sets %}
+    <li class="card">
+      <div class="card-meta">
+        <span class="badge">Part {{ s.part }}</span>
+        <span class="muted">{{ s.questions|length }} question{{ '' if s.questions|length == 1 else 's' }}</span>
+        {% if s.updated %}<time>{{ s.updated }}</time>{% endif %}
+      </div>
+      <h2 class="card-title"><a href="/toeic/{{ s.slug }}">{{ s.title }}</a></h2>
+      {% if s.summary %}<p class="summary">{{ s.summary }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

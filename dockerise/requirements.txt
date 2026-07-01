@@ -1,0 +1,11 @@
+# Web-server dependencies only (no pyinstaller / pystray / pillow / typer —
+# those are for the desktop launcher & CLI build, not the containerized server).
+fastapi
+uvicorn[standard]
+jinja2
+python-frontmatter>=1.0,<1.1  # 1.1+ needs Python 3.10+ (typing.TypeGuard)
+pydantic>=2
+mistune>=3
+python-slugify
+pyyaml
+python-multipart

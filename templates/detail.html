@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="detail-wrap">
+    <article class="post">
+      <a class="back" href="/posts">← Back</a>
+
+      <header class="post-head">
+        <h1>{% if post.pinned %}📌 {% endif %}{{ post.title }}</h1>
+        <div class="post-meta">
+          <span class="badge badge-{{ post.status.value }}">{{ post.status.value }}</span>
+          <span class="cat">{{ post.category }}</span>
+          <span class="muted">created {{ post.created }} · updated {{ post.updated }}</span>
+        </div>
+        <div class="card-tags">
+          {% for t in post.tags %}<a href="/posts?tag={{ t|urlencode }}" class="tag">#{{ t }}</a>{% endfor %}
+        </div>
+        <div class="post-actions">
+          <a class="btn" href="/edit/{{ post.slug }}">Edit</a>
+          <button class="btn btn-danger" data-delete="{{ post.slug }}">Delete</button>
+        </div>
+      </header>
+
+      {% if series %}
+      <nav class="series-box" aria-label="Series navigation">
+        <div class="series-head">📚 Series: <strong>{{ series.name }}</strong>
+          <span class="muted">· part {{ series.number }} of {{ series.total }}</span>
+        </div>
+        <ol>
+          {% for p in series.members %}
+          <li class="{{ 'current' if p.slug == series.current else '' }}">
+            {% if p.slug == series.current %}{{ p.title }}{% else %}<a href="/posts/{{ p.slug }}">{{ p.title }}</a>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </nav>
+      {% endif %}
+
+      <div class="markdown">
+        {{ content_html | safe }}
+      </div>
+
+      {% if series and (series.prev or series.next) %}
+      <nav class="series-pager">
+        <span>{% if series.prev %}<a href="/posts/{{ series.prev.slug }}">← {{ series.prev.title }}</a>{% endif %}</span>
+        <span>{% if series.next %}<a href="/posts/{{ series.next.slug }}">{{ series.next.title }} →</a>{% endif %}</span>
+      </nav>
+      {% endif %}
+    </article>
+
+    {% if toc|length >= 2 %}
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ul>
+          {% for item in toc %}
+          <li class="toc-l{{ item.level }}"><a href="#{{ item.id }}">{{ item.text }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </aside>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}API Docs – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>📄 API Docs</h1>
+    <span class="muted">{{ projects|length }} project{{ '' if projects|length == 1 else 's' }}</span>
+    <a class="btn btn-primary head-action" href="/api-docs/new">+ New Project</a>
+  </div>
+
+  {% if not projects %}
+    <p class="muted empty">No API projects yet. Create one to start documenting your REST APIs —
+      endpoints, parameters, and response schemas, all stored as markdown files.</p>
+  {% endif %}
+
+  <ul class="feed">
+    {% for p in projects %}
+    <li class="card">
+      <div class="card-meta">
+        <span class="badge">{{ p.endpoint_count }} endpoint{{ '' if p.endpoint_count == 1 else 's' }}</span>
+        {% if p.version %}<span class="cat">v{{ p.version }}</span>{% endif %}
+        {% if p.base_url %}<code class="api-base-url muted">{{ p.base_url }}</code>{% endif %}
+        {% if p.updated %}<time>{{ p.updated }}</time>{% endif %}
+      </div>
+      <h2 class="card-title"><a href="/api-docs/{{ p.slug }}">{{ p.title }}</a></h2>
+      {% if p.description %}<p class="summary">{{ p.description }}</p>{% endif %}
+      {% if p.tags %}
+      <div class="card-tags">
+        {% for t in p.tags %}<span class="tag">#{{ t }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

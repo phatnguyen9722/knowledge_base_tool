@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}TOEIC Listening (Parts 1-4) – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>🎵 TOEIC Listening</h1>
+    <span class="muted">{{ sets|length }} set{{ '' if sets|length == 1 else 's' }}</span>
+    <a class="btn btn-primary head-action" href="/toeic/listening/new">+ New Set</a>
+  </div>
+
+  <p class="muted"><a href="/toeic">← Reading (Parts 5-7)</a></p>
+
+  {% if not sets %}
+    <p class="muted empty">No listening sets yet. Create one — choose the part and format (old/new),
+      then write your questions using the block format shown in the editor guide.</p>
+  {% endif %}
+
+  {# Group by part number #}
+  {% for part_num in [1, 2, 3, 4] %}
+  {% set part_sets = sets | selectattr('part', 'equalto', part_num) | list %}
+  {% if part_sets %}
+  <h2 class="listening-part-head">
+    Part {{ part_num }}
+    {% if part_num == 1 %}— Photographs
+    {% elif part_num == 2 %}— Question-Response
+    {% elif part_num == 3 %}— Conversations
+    {% elif part_num == 4 %}— Short Talks
+    {% endif %}
+  </h2>
+  <ul class="feed">
+    {% for s in part_sets %}
+    <li class="card">
+      <div class="card-meta">
+        <span class="badge">Part {{ s.part }}</span>
+        <span class="badge badge-{{ 'published' if s.format == 'new' else 'draft' }}">{{ s.format|upper }}</span>
+        <span class="muted">{{ s.item_count }} question{{ '' if s.item_count == 1 else 's' }}
+          {%- if s.group_count %} · {{ s.group_count }} group{{ '' if s.group_count == 1 else 's' }}{% endif %}</span>
+        {% if s.updated %}<time>{{ s.updated }}</time>{% endif %}
+      </div>
+      <h2 class="card-title"><a href="/toeic/listening/{{ s.slug }}">{{ s.title }}</a></h2>
+      {% if s.summary %}<p class="summary">{{ s.summary }}</p>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% endfor %}
+{% endblock %}

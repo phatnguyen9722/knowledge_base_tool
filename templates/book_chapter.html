@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ chapter.title }} – {{ collection.title }}{% endblock %}
+
+{% block content %}
+  <div class="detail-wrap">
+    <article class="post">
+      <a class="back" href="/books/{{ collection.slug }}">← {{ collection.title }}</a>
+
+      <header class="post-head">
+        <h1>{{ chapter.title }}</h1>
+        <div class="post-meta">
+          <span class="muted">Chapter {{ number }} of {{ total }}</span>
+        </div>
+      </header>
+
+      <div class="markdown">
+        {{ content_html | safe }}
+      </div>
+
+      {% if prev or next %}
+      <nav class="series-pager">
+        <span>{% if prev %}<a href="/books/{{ collection.slug }}/{{ prev.slug }}">← {{ prev.title }}</a>{% endif %}</span>
+        <span>{% if next %}<a href="/books/{{ collection.slug }}/{{ next.slug }}">{{ next.title }} →</a>{% endif %}</span>
+      </nav>
+      {% endif %}
+    </article>
+
+    {% if toc|length >= 2 %}
+    <aside class="toc-rail">
+      <nav class="toc" aria-label="Table of contents">
+        <h2>Contents</h2>
+        <ul>
+          {% for item in toc %}
+          <li class="toc-l{{ item.level }}"><a href="#{{ item.id }}">{{ item.text }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+    </aside>
+    {% endif %}
+  </div>
+{% endblock %}
