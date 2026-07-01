@@ -1,10 +1,10 @@
 # Convenience wrapper. Run from the PROJECT ROOT:
-#   docker compose -f ai-scratch/dockerise/docker-compose.yml up --build
+#   docker compose -f dockerise/docker-compose.yml up --build
 services:
   kb-tool:
     build:
-      context: ../..                       # project root
-      dockerfile: ai-scratch/dockerise/Dockerfile
+      context: ../                  # project root
+      dockerfile: dockerise/Dockerfile
     image: kb-tool
     container_name: kb-tool
     ports:

@@ -1,6 +1,6 @@
 # Knowledge Base Tool — web server image.
 # Build context MUST be the project root (so app/, templates/, static/ are visible):
-#   docker build -f ai-scratch/dockerise/Dockerfile -t kb-tool .
+#   docker build -f dockerise/Dockerfile -t kb-tool .
 FROM python:3.12-slim
 
 # Faster, cleaner Python in containers.
@@ -11,7 +11,7 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # Install deps first (better layer caching).
-COPY ai-scratch/dockerise/requirements.txt /app/requirements.txt
+COPY dockerise/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # App code + assets.
@@ -20,7 +20,7 @@ COPY templates/ /app/templates/
 COPY static/ /app/static/
 
 # Container config (data dirs point at /data).
-COPY ai-scratch/dockerise/config.docker.yaml /app/config.yaml
+COPY dockerise/config.docker.yaml /app/config.yaml
 
 # Persist all user content here.
 RUN mkdir -p /data

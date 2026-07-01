@@ -21,7 +21,7 @@ Files in this folder:
 From the **project root** (`knowledge_base_tool/`):
 
 ```bash
-docker build -f ai-scratch/dockerise/Dockerfile -t kb-tool .
+docker build -f dockerise/Dockerfile -t kb-tool .
 ```
 
 ### 2. Run
@@ -47,10 +47,10 @@ docker rm -f kb-tool          # remove container (volume kb-data survives)
 From the **project root**:
 
 ```bash
-docker compose -f ai-scratch/dockerise/docker-compose.yml up --build -d
+docker compose -f dockerise/docker-compose.yml up --build -d
 # open http://localhost:5050
-docker compose -f ai-scratch/dockerise/docker-compose.yml logs -f
-docker compose -f ai-scratch/dockerise/docker-compose.yml down       # stop (volume kept)
+docker compose -f dockerise/docker-compose.yml logs -f
+docker compose -f dockerise/docker-compose.yml down       # stop (volume kept)
 ```
 
 ---
@@ -64,7 +64,7 @@ so all your posts/notes/music/books/etc. survive.
 ### Plain Docker
 ```bash
 # 1. rebuild the image with the new code (from the project root)
-docker build -f ai-scratch/dockerise/Dockerfile -t kb-tool .
+docker build -f dockerise/Dockerfile -t kb-tool .
 
 # 2. replace the container — the kb-data volume is reused, data is kept
 docker rm -f kb-tool
@@ -73,7 +73,7 @@ docker run -d --name kb-tool -p 5050:5050 -v kb-data:/data kb-tool
 
 ### docker compose (simpler)
 ```bash
-docker compose -f ai-scratch/dockerise/docker-compose.yml up --build -d
+docker compose -f dockerise/docker-compose.yml up --build -d
 ```
 `up --build` rebuilds the image and recreates the container in place; the
 `kb-data` volume persists.
