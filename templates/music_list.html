@@ -5,15 +5,17 @@
   <div class="feed-head">
     <h1>🎵 Music</h1>
     <span class="muted">{{ tracks|length }} track{{ '' if tracks|length == 1 else 's' }}</span>
-    <a class="btn" href="/music/playlists">▶ Playlists</a>
-    <form class="head-action import-form" method="post" action="/music/import"
-          enctype="multipart/form-data">
-      <label class="btn btn-primary">
-        + Import .mp3
-        <input type="file" name="file" accept="audio/mpeg,.mp3" hidden
-               onchange="this.form.submit()">
-      </label>
-    </form>
+    <div class="head-actions">
+      <a class="btn" href="/music/playlists">▶ Playlists</a>
+      <form class="import-form" method="post" action="/music/import"
+            enctype="multipart/form-data">
+        <label class="btn btn-primary">
+          + Import .mp3
+          <input type="file" name="file" accept="audio/mpeg,.mp3" hidden
+                 onchange="this.form.submit()">
+        </label>
+      </form>
+    </div>
   </div>
 
   {% if not tracks %}
