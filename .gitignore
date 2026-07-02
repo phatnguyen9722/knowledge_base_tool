@@ -17,7 +17,7 @@ venv/
 .pytest_cache/
 
 ai-scratch/*
-!ai-scratch/.gitkeep
+!ai-scratch/reports/
 
 music/*
 !music/.gitkeep

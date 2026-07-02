@@ -25,7 +25,7 @@ def test_settings_button_and_theme_options_render(client):
     html = client.get("/").text
     assert 'id="settings-btn"' in html
     assert 'id="settings-modal"' in html
-    for theme in ["vodka", "midnight", "sapphire", "aegean", "champagne", "rose", "amethyst"]:
+    for theme in ["vodka", "midnight", "sapphire", "aegean", "champagne", "rose", "amethyst", "dracula", "reverie"]:
         assert f'data-theme-set="{theme}"' in html
     # no-flash loader present
     assert 'localStorage.getItem("kb-theme")' in html
@@ -34,9 +34,9 @@ def test_settings_button_and_theme_options_render(client):
 def test_all_themes_defined_in_css():
     css = (Path("static") / "style.css").read_text(encoding="utf-8")
     # non-default palettes (vodka is the :root default, no [data-theme] block)
-    for theme in ["midnight", "sapphire", "aegean", "champagne", "rose", "amethyst"]:
+    for theme in ["midnight", "sapphire", "aegean", "champagne", "rose", "amethyst", "dracula", "reverie"]:
         assert f'[data-theme="{theme}"]' in css
     # swatches for the picker (incl. vodka)
     for sw in [".sw-vodka", ".sw-midnight", ".sw-sapphire", ".sw-aegean",
-               ".sw-champagne", ".sw-rose", ".sw-amethyst"]:
+               ".sw-champagne", ".sw-rose", ".sw-amethyst", ".sw-dracula", ".sw-reverie"]:
         assert sw in css

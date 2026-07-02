@@ -81,6 +81,35 @@
   --danger: #f87171;
   --mark: #6b21a8;
 }
+/* Dracula — iconic dark purple (à la VS Code Dracula theme) */
+[data-theme="dracula"] {
+  --bg: #282a36;
+  --fg: #f8f8f2;
+  --muted: #6272a4;
+  --border: #44475a;
+  --card: #1e1f29;
+  --accent: #bd93f9;
+  --accent-fg: #282a36;
+  --danger: #ff5555;
+  --mark: #44475a;
+}
+/* Reverie — mystic dusk gradient: deep violet → rose → warm peach */
+[data-theme="reverie"] {
+  --bg: #2d1255;
+  --fg: #fdf0f5;
+  --muted: #c9899a;
+  --border: #5e2d6e;
+  --card: #3a1a62;
+  --accent: #ffaf7b;
+  --accent-fg: #3a1c71;
+  --danger: #ff6b8a;
+  --mark: #7a2d50;
+}
+/* Gradient wash — applied on body so it shows behind solid components */
+[data-theme="reverie"] body {
+  background: linear-gradient(to right, #3a1c71, #d76d77, #ffaf7b);
+  background-attachment: fixed;
+}
 
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -301,6 +330,16 @@ a:hover { text-decoration: underline; }
 [data-theme="amethyst"] .method-get    { background: #065f46; color: #d1fae5; }
 [data-theme="amethyst"] .method-post   { background: #1e3a8a; color: #dbeafe; }
 [data-theme="amethyst"] .method-delete { background: #7f1d1d; color: #fee2e2; }
+[data-theme="dracula"]  .method-get    { background: #065f46; color: #d1fae5; }
+[data-theme="dracula"]  .method-post   { background: #1e3a8a; color: #dbeafe; }
+[data-theme="dracula"]  .method-put    { background: #78350f; color: #fef3c7; }
+[data-theme="dracula"]  .method-patch  { background: #4c1d95; color: #ede9fe; }
+[data-theme="dracula"]  .method-delete { background: #7f1d1d; color: #fee2e2; }
+[data-theme="reverie"] .method-get    { background: #065f46; color: #d1fae5; }
+[data-theme="reverie"] .method-post   { background: #1e3a8a; color: #dbeafe; }
+[data-theme="reverie"] .method-put    { background: #78350f; color: #fef3c7; }
+[data-theme="reverie"] .method-patch  { background: #4c1d95; color: #ede9fe; }
+[data-theme="reverie"] .method-delete { background: #7f1d1d; color: #fee2e2; }
 
 /* Filter bar */
 .api-filter-bar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: 1rem 0 .75rem; }
@@ -626,7 +665,41 @@ mark { background: var(--mark); }
 /* Feature toggle switches — two columns: name + switch */
 .feature-row { display: flex; align-items: center; justify-content: space-between; padding: .5rem 0; border-bottom: 1px solid var(--border); }
 .feature-row:last-child { border-bottom: none; }
+.feature-row-info { display: flex; flex-direction: column; gap: .1rem; }
 .feature-row-label { font-size: .95rem; }
+.feature-row-desc  { font-size: .78rem; color: var(--muted); }
+
+/* Features search bar */
+.features-search-wrap {
+  position: relative; display: flex; align-items: center;
+  margin-bottom: .75rem;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg);
+  transition: border-color .15s ease;
+}
+.features-search-wrap:focus-within { border-color: var(--accent); }
+.features-search-icon {
+  padding: 0 .5rem 0 .6rem; font-size: .9rem;
+  pointer-events: none; flex-shrink: 0; opacity: .7;
+}
+#features-search-input,
+#theme-search-input,
+#icons-search-input {
+  flex: 1; border: none; background: transparent;
+  padding: .42rem .4rem .42rem 0; color: var(--fg);
+  font-size: .9rem; outline: none;
+  min-width: 0;
+}
+#features-search-input::placeholder,
+#theme-search-input::placeholder,
+#icons-search-input::placeholder { color: var(--muted); }
+.features-search-clear {
+  border: none; background: transparent; cursor: pointer;
+  color: var(--muted); font-size: .85rem; padding: 0 .6rem;
+  line-height: 1; flex-shrink: 0;
+}
+.features-search-clear:hover { color: var(--fg); }
+
 
 .toggle-switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
 .toggle-switch input { opacity: 0; width: 0; height: 0; }
@@ -759,6 +832,8 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
 .sw-champagne { background: linear-gradient(135deg, #f4f0e6 50%, #c15f3c 50%); }
 .sw-rose      { background: linear-gradient(135deg, #fff5f7 50%, #e11d48 50%); }
 .sw-amethyst  { background: linear-gradient(135deg, #1a1325 50%, #a855f7 50%); }
+.sw-dracula   { background: linear-gradient(135deg, #282a36 50%, #bd93f9 50%); }
+.sw-reverie   { background: linear-gradient(to right, #3a1c71, #d76d77, #ffaf7b); }
 
 .shortcuts { border-collapse: collapse; margin: .5rem 0 1rem; }
 .shortcuts td { padding: .25rem .8rem .25rem 0; }

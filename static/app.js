@@ -182,7 +182,53 @@ var APP_LABELS = {
   });
   markActiveTheme();
 
-  // --- Help modal ----------------------------------------------------------
+  // --- Theme search (filters .theme-opt buttons by their label text) --------
+  (function () {
+    var themeInput = document.getElementById("theme-search-input");
+    var themeClear = document.getElementById("theme-search-clear");
+    if (!themeInput) return;
+
+    function applyThemeSearch() {
+      var q = themeInput.value.trim().toLowerCase();
+      var anyVisible = false;
+      document.querySelectorAll(".theme-opt").forEach(function (btn) {
+        // The label is the last <span> child text
+        var label = (btn.textContent || "").trim().toLowerCase();
+        var match = !q || label.indexOf(q) !== -1;
+        btn.style.display = match ? "" : "none";
+        if (match) anyVisible = true;
+      });
+      // Empty state inside the grid
+      var grid = document.getElementById("theme-grid");
+      if (grid) {
+        var empty = grid.querySelector(".theme-empty");
+        if (!anyVisible) {
+          if (!empty) {
+            empty = document.createElement("p");
+            empty.className = "theme-empty muted";
+            empty.style.cssText = "font-size:.88rem;margin:.5rem 0;grid-column:1/-1";
+            grid.appendChild(empty);
+          }
+          empty.textContent = 'No themes match "' + themeInput.value.trim() + '".';
+        } else if (empty) {
+          empty.remove();
+        }
+      }
+      if (themeClear) themeClear.hidden = !q;
+    }
+
+    themeInput.addEventListener("input",  applyThemeSearch);
+    themeInput.addEventListener("search", applyThemeSearch);
+    if (themeClear) {
+      themeClear.addEventListener("click", function () {
+        themeInput.value = "";
+        applyThemeSearch();
+        themeInput.focus();
+      });
+    }
+  })();
+
+
   const helpModal = $("#help-modal");
   function toggleHelp(force) {
     if (!helpModal) return;
@@ -487,8 +533,13 @@ function buildFeaturesPanel() {
   var f = _loadFeatures();
   list.innerHTML = FEATURE_LIST.map(function (feat) {
     var enabled = f[feat.app] !== false;
-    return '<div class="feature-row">' +
-      '<span class="feature-row-label">' + feat.label + '</span>' +
+    return '<div class="feature-row"' +
+      ' data-label="' + feat.label.toLowerCase() + '"' +
+      ' data-desc="'  + (feat.desc || "").toLowerCase() + '">' +
+      '<div class="feature-row-info">' +
+        '<span class="feature-row-label">' + feat.label + '</span>' +
+        (feat.desc ? '<span class="feature-row-desc">' + feat.desc + '</span>' : '') +
+      '</div>' +
       '<label class="toggle-switch">' +
         '<input type="checkbox" data-feature-toggle="' + feat.app + '"' + (enabled ? ' checked' : '') + '>' +
         '<span class="toggle-slider"></span>' +
@@ -501,7 +552,66 @@ function buildFeaturesPanel() {
       setFeature(cb.getAttribute("data-feature-toggle"), cb.checked);
     });
   });
+
+  // Wire search input — use a named handler stored on the element so
+  // re-opening the panel never stacks duplicate listeners.
+  var searchInput = document.getElementById("features-search-input");
+  var clearBtn    = document.getElementById("features-search-clear");
+  if (!searchInput) return;
+
+  function applyFeatureSearch() {
+    var q = searchInput.value.trim().toLowerCase();
+    var anyVisible = false;
+    list.querySelectorAll(".feature-row").forEach(function (row) {
+      var match = !q ||
+        row.getAttribute("data-label").indexOf(q) !== -1 ||
+        row.getAttribute("data-desc").indexOf(q)  !== -1;
+      row.style.display = match ? "" : "none";  // row has display:flex; [hidden] attr is overridden by it
+      if (match) anyVisible = true;
+    });
+    // Empty-state message
+    var empty = list.querySelector(".features-empty");
+    if (!anyVisible) {
+      if (!empty) {
+        empty = document.createElement("p");
+        empty.className = "features-empty muted";
+        empty.style.fontSize = ".88rem";
+        empty.style.margin = ".5rem 0";
+        list.appendChild(empty);
+      }
+      empty.textContent = 'No features match "' + searchInput.value.trim() + '".';
+    } else if (empty) {
+      empty.remove();
+    }
+    // Show/hide clear button
+    if (clearBtn) clearBtn.hidden = !q;
+  }
+
+  // Detach previous handler before attaching a new one (safe on every rebuild)
+  if (searchInput._featureSearchHandler) {
+    searchInput.removeEventListener("input",  searchInput._featureSearchHandler);
+    searchInput.removeEventListener("search", searchInput._featureSearchHandler);
+  }
+  searchInput._featureSearchHandler = applyFeatureSearch;
+  searchInput.addEventListener("input",  applyFeatureSearch);
+  searchInput.addEventListener("search", applyFeatureSearch); // native clear "×"
+
+  if (clearBtn) {
+    if (clearBtn._featureClearHandler) {
+      clearBtn.removeEventListener("click", clearBtn._featureClearHandler);
+    }
+    clearBtn._featureClearHandler = function () {
+      searchInput.value = "";
+      applyFeatureSearch();
+      searchInput.focus();
+    };
+    clearBtn.addEventListener("click", clearBtn._featureClearHandler);
+  }
+
+  // Re-apply the current filter in case panel is re-opened with text still present
+  applyFeatureSearch();
 }
+
 
 // App icon management — Settings → Modify App
 // (APP_ICONS_DEFAULT and APP_LABELS are defined at the top of this file)
@@ -678,7 +788,7 @@ function buildIconPicker() {
       ? '<img src="' + customUrl + '" class="app-icon-img icon-preview-img" alt="">'
       : '<span class="icon-preview-emoji">' + defEmoji + '</span>';
     var label = APP_LABELS[app] || app;
-    return '<div class="icon-picker-row">' +
+    return '<div class="icon-picker-row" data-label="' + label.toLowerCase() + '">' +
       '<div class="icon-picker-current">' + previewHtml + '</div>' +
       '<span class="icon-picker-label">' + label + '</span>' +
       '<label class="btn icon-upload-btn">' +
@@ -720,6 +830,57 @@ function buildIconPicker() {
       buildIconPicker();
     });
   });
+
+  // --- App Icons search (filters .icon-picker-row by app label) -------------
+  var iconsInput = document.getElementById("icons-search-input");
+  var iconsClear = document.getElementById("icons-search-clear");
+  if (iconsInput) {
+    function applyIconSearch() {
+      var q = iconsInput.value.trim().toLowerCase();
+      var anyVisible = false;
+      list.querySelectorAll(".icon-picker-row").forEach(function (row) {
+        var label = (row.getAttribute("data-label") || "").toLowerCase();
+        var match = !q || label.indexOf(q) !== -1;
+        row.style.display = match ? "" : "none";
+        if (match) anyVisible = true;
+      });
+      // Empty state
+      var empty = list.querySelector(".icons-empty");
+      if (!anyVisible) {
+        if (!empty) {
+          empty = document.createElement("p");
+          empty.className = "icons-empty muted";
+          empty.style.cssText = "font-size:.88rem;margin:.5rem 0";
+          list.appendChild(empty);
+        }
+        empty.textContent = 'No apps match "' + iconsInput.value.trim() + '".';
+      } else if (empty) {
+        empty.remove();
+      }
+      if (iconsClear) iconsClear.hidden = !q;
+    }
+
+    if (iconsInput._iconSearchHandler) {
+      iconsInput.removeEventListener("input",  iconsInput._iconSearchHandler);
+      iconsInput.removeEventListener("search", iconsInput._iconSearchHandler);
+    }
+    iconsInput._iconSearchHandler = applyIconSearch;
+    iconsInput.addEventListener("input",  applyIconSearch);
+    iconsInput.addEventListener("search", applyIconSearch);
+
+    if (iconsClear) {
+      if (iconsClear._iconClearHandler)
+        iconsClear.removeEventListener("click", iconsClear._iconClearHandler);
+      iconsClear._iconClearHandler = function () {
+        iconsInput.value = "";
+        applyIconSearch();
+        iconsInput.focus();
+      };
+      iconsClear.addEventListener("click", iconsClear._iconClearHandler);
+    }
+
+    applyIconSearch();
+  }
 }
 
 function enhanceCodeBlocks(container) {

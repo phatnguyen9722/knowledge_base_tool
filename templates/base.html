@@ -80,7 +80,14 @@
         <div class="settings-panel" id="panel-theme">
           <h3 class="settings-panel-title">Theme</h3>
           <p class="muted settings-panel-desc">Choose a colour scheme for the app.</p>
-          <div class="theme-grid">
+          <div class="features-search-wrap">
+            <span class="features-search-icon">🔍</span>
+            <input type="search" id="theme-search-input"
+                   placeholder="Search themes…"
+                   autocomplete="off" aria-label="Search themes">
+            <button type="button" id="theme-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
+          </div>
+          <div class="theme-grid" id="theme-grid">
             <button class="theme-opt" data-theme-set="vodka">
               <span class="swatch sw-vodka"></span><span>Vodka</span></button>
             <button class="theme-opt" data-theme-set="midnight">
@@ -95,6 +102,10 @@
               <span class="swatch sw-rose"></span><span>Rosé</span></button>
             <button class="theme-opt" data-theme-set="amethyst">
               <span class="swatch sw-amethyst"></span><span>Amethyst</span></button>
+            <button class="theme-opt" data-theme-set="dracula">
+              <span class="swatch sw-dracula"></span><span>Dracula</span></button>
+            <button class="theme-opt" data-theme-set="reverie">
+              <span class="swatch sw-reverie"></span><span>Reverie</span></button>
           </div>
         </div>
 
@@ -105,6 +116,13 @@
             Toggle sections on or off. Hidden sections disappear from the menu
             and homepage but remain accessible by URL.
           </p>
+          <div class="features-search-wrap">
+            <span class="features-search-icon">🔍</span>
+            <input type="search" id="features-search-input"
+                   placeholder="Search features…"
+                   autocomplete="off" aria-label="Search features">
+            <button type="button" id="features-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
+          </div>
           <div id="features-panel-list"></div>
         </div>
 
@@ -115,6 +133,13 @@
             Upload a custom icon (PNG/JPG/SVG) for each section, or reset to the default emoji.
             Uploaded icons are saved to <code>img/icons/</code>.
           </p>
+          <div class="features-search-wrap">
+            <span class="features-search-icon">🔍</span>
+            <input type="search" id="icons-search-input"
+                   placeholder="Search apps…"
+                   autocomplete="off" aria-label="Search app icons">
+            <button type="button" id="icons-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
+          </div>
           <div id="icon-picker-list"></div>
         </div>
 
