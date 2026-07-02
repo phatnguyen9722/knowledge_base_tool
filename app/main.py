@@ -59,6 +59,10 @@ ALLOWED_IMAGE_TYPES = {
 }
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 
+# Background images stored in img/background/
+BG_DIR = IMG_DIR / "background"
+BG_DIR.mkdir(parents=True, exist_ok=True)
+
 # Music uploads are stored here and served at /music.
 MUSIC_DIR.mkdir(parents=True, exist_ok=True)
 MAX_AUDIO_BYTES = 30 * 1024 * 1024  # 30 MB
@@ -1411,5 +1415,58 @@ async def delete_icon(filename: str):
     path = IMG_DIR / "icons" / filename
     if not path.exists():
         raise HTTPException(404, "Icon not found")
+    path.unlink()
+    return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Background management  (img/background/)
+# ---------------------------------------------------------------------------
+
+@app.post("/api/upload-background")
+async def upload_background(file: UploadFile = File(...)):
+    """Upload a background image; stored in img/background/ and served at /img/background/…"""
+    ext = ALLOWED_IMAGE_TYPES.get((file.content_type or "").lower())
+    name = (file.filename or "").lower()
+    if not ext:
+        for e in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".bmp"):
+            if name.endswith(e):
+                ext = e if e != ".jpeg" else ".jpg"
+                break
+    if not ext:
+        raise HTTPException(400, f"Unsupported image type: {file.content_type!r}")
+    data = await file.read()
+    if not data:
+        raise HTTPException(400, "Empty file")
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(413, "Image too large (max 10 MB)")
+    digest = hashlib.sha256(data).hexdigest()[:16]
+    filename = f"{digest}{ext}"
+    path = BG_DIR / filename
+    if not path.exists():
+        path.write_bytes(data)
+    return {"url": f"/img/background/{filename}", "filename": filename}
+
+
+@app.get("/api/backgrounds")
+async def list_backgrounds():
+    """Return all uploaded background images in img/background/."""
+    allowed_ext = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".bmp"}
+    files = sorted(
+        (f for f in BG_DIR.iterdir() if f.is_file() and f.suffix.lower() in allowed_ext),
+        key=lambda f: f.stat().st_mtime,
+        reverse=True,
+    )
+    return [{"url": f"/img/background/{f.name}", "filename": f.name} for f in files]
+
+
+@app.delete("/api/backgrounds/{filename}")
+async def delete_background(filename: str):
+    """Delete an uploaded background image from img/background/."""
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(400, "Invalid filename")
+    path = BG_DIR / filename
+    if not path.exists():
+        raise HTTPException(404, "Background not found")
     path.unlink()
     return {"ok": True}

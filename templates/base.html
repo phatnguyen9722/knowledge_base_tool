@@ -33,6 +33,14 @@
         });
         if (css2) document.getElementById("header-hide-style").textContent = css2;
       } catch (e) {}
+      try {
+        var kbBg = JSON.parse(localStorage.getItem("kb-background") || "null");
+        if (kbBg && kbBg.url) {
+          document.documentElement.style.setProperty("--kb-bg-url", "url('" + kbBg.url + "')");
+          document.documentElement.style.setProperty("--kb-bg-size", kbBg.size || "cover");
+          document.documentElement.style.setProperty("--kb-bg-opacity", (kbBg.opacity != null ? kbBg.opacity : 100) / 100);
+        }
+      } catch (e) {}
     })();
   </script>
 </head>
@@ -83,6 +91,7 @@
         <button class="settings-nav-item" data-panel="header-apps">🔝 Header Apps</button>
         <button class="settings-nav-item" data-panel="app-icons">🖼 App Icons</button>
         <button class="settings-nav-item" data-panel="icon-library">📂 Icon Library</button>
+        <button class="settings-nav-item" data-panel="background">🌄 Background</button>
       </nav>
 
       <!-- RIGHT: content panels (only one shown at a time) -->
@@ -189,6 +198,48 @@
             All previously uploaded icons. Apply one to any section or delete it.
           </p>
           <div id="icon-library" class="icon-library-grid"></div>
+        </div>
+
+        <!-- Background panel -->
+        <div class="settings-panel" id="panel-background" hidden>
+          <h3 class="settings-panel-title">Background</h3>
+          <p class="muted settings-panel-desc">
+            Pick a built-in background, upload your own, or remove it entirely.
+          </p>
+
+          <!-- Fit / Position controls (shown when any background is active) -->
+          <div class="bg-controls" id="bg-controls" hidden>
+            <label class="bg-ctrl-label" for="bg-size-select">Size</label>
+            <select id="bg-size-select" class="bg-ctrl-select">
+              <option value="cover">Cover (fill)</option>
+              <option value="contain">Contain (fit)</option>
+              <option value="auto">Auto (tile)</option>
+            </select>
+            <label class="bg-ctrl-label" for="bg-opacity-range">Opacity</label>
+            <input type="range" id="bg-opacity-range" min="10" max="100" value="100" step="5" class="bg-ctrl-range">
+            <span id="bg-opacity-val" class="muted" style="font-size:.82rem">100%</span>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="panel-bulk-actions" style="margin-bottom:.6rem">
+            <button class="btn" id="bg-use-default">✕ Remove Background</button>
+          </div>
+
+          <!-- Built-in defaults -->
+          <div class="bg-gallery-title">Built-in</div>
+          <div id="bg-defaults-gallery" class="bg-gallery"></div>
+
+          <!-- User-uploaded gallery -->
+          <div class="bg-gallery-title" style="margin-top:.9rem">Uploaded</div>
+          <div class="bg-dropzone" id="bg-dropzone">
+            <input type="file" id="bg-upload-input" accept="image/*" hidden>
+            <div class="bg-dropzone-inner">
+              <span class="bg-dropzone-icon">🖼️</span>
+              <span class="bg-dropzone-label">Drop an image here or <label for="bg-upload-input" class="bg-dropzone-browse">browse</label></span>
+              <span class="muted" style="font-size:.78rem">PNG · JPG · WEBP · GIF — max 10 MB</span>
+            </div>
+          </div>
+          <div id="bg-gallery" class="bg-gallery"></div>
         </div>
 
         <div class="settings-footer">

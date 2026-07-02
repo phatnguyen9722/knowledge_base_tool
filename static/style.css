@@ -137,7 +137,7 @@ a:hover { text-decoration: underline; }
 .topbar-fixed { margin-left: auto; display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
 .topbar .search input {
   width: 100%; padding: .5rem .8rem;
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: 20px;
   background: var(--bg); color: var(--fg);
 }
 .btn-ghost { border: 1px solid var(--border); }
@@ -859,4 +859,113 @@ kbd {
   .toc { position: static; }
   .editor-panes { grid-template-columns: 1fr; height: auto; }
   .editor-panes textarea { height: 40vh; }
+}
+
+/* =========================================================================
+   Global background overlay (driven by CSS custom props set from JS / no-flash)
+   ========================================================================= */
+:root {
+  --kb-bg-url: none;
+  --kb-bg-size: cover;
+  --kb-bg-opacity: 1;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: var(--kb-bg-url);
+  background-size: var(--kb-bg-size);
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: var(--kb-bg-opacity);
+  pointer-events: none;
+}
+
+/* =========================================================================
+   Settings — Background panel
+   ========================================================================= */
+
+/* Dropzone */
+.bg-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  padding: 1.4rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .18s, background .18s;
+  background: var(--card);
+  margin-bottom: .5rem;
+}
+.bg-dropzone:hover,
+.bg-dropzone.drag-over {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card));
+}
+.bg-dropzone-inner { display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+.bg-dropzone-icon { font-size: 2rem; line-height: 1; }
+.bg-dropzone-label { font-size: .9rem; color: var(--fg); }
+.bg-dropzone-browse { color: var(--accent); cursor: pointer; text-decoration: underline; font-weight: 600; }
+.bg-dropzone.uploading { opacity: .6; pointer-events: none; }
+
+/* Fit / opacity controls */
+.bg-controls {
+  display: flex; align-items: center; gap: .55rem; flex-wrap: wrap;
+  padding: .55rem .75rem; background: var(--card);
+  border: 1px solid var(--border); border-radius: 10px;
+  margin-bottom: .5rem;
+}
+.bg-ctrl-label { font-size: .82rem; color: var(--muted); white-space: nowrap; }
+.bg-ctrl-select {
+  font-size: .82rem; padding: .2rem .4rem;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--fg); cursor: pointer;
+}
+.bg-ctrl-range { flex: 1; min-width: 80px; accent-color: var(--accent); cursor: pointer; }
+
+/* Gallery */
+.bg-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: .55rem;
+  margin-top: .25rem;
+}
+.bg-gallery-item {
+  position: relative;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 16/10;
+  background: var(--card);
+  transition: border-color .18s, transform .15s;
+}
+.bg-gallery-item:hover { border-color: var(--accent); transform: scale(1.03); }
+.bg-gallery-item.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.bg-gallery-thumb {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: opacity .15s;
+}
+.bg-gallery-badge {
+  position: absolute; top: 4px; right: 4px;
+  background: var(--accent); color: var(--accent-fg);
+  font-size: .62rem; font-weight: 700; padding: .1rem .35rem;
+  border-radius: 999px; letter-spacing: .03em;
+  opacity: 0; transition: opacity .18s;
+}
+.bg-gallery-item.active .bg-gallery-badge { opacity: 1; }
+.bg-gallery-del {
+  position: absolute; bottom: 4px; right: 4px;
+  background: rgba(0,0,0,.55); color: #fff;
+  border: none; border-radius: 50%;
+  width: 22px; height: 22px; font-size: .75rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; transition: opacity .18s;
+  line-height: 1; padding: 0;
+}
+.bg-gallery-item:hover .bg-gallery-del { opacity: 1; }
+.bg-gallery-empty { font-size: .85rem; color: var(--muted); padding: .35rem 0; }
+.bg-gallery-title {
+  font-size: .78rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); margin: .5rem 0 .4rem;
 }

@@ -139,6 +139,7 @@ var APP_LABELS = {
     if (id === "header-apps")  buildHeaderAppsPanel();
     if (id === "app-icons")    buildIconPicker();
     if (id === "icon-library") loadIconLibrary();
+    if (id === "background")   loadBgPanel();
   }
 
   // Wire sidebar nav items
@@ -1126,3 +1127,243 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
+// ===========================================================================
+// Background Management
+// ===========================================================================
+
+// Built-in backgrounds shipped with the app (served from /static/).
+// Add more entries here whenever you drop a new file into static/.
+var BG_DEFAULTS = [
+  { url: "/static/background_1.svg", label: "Background 1" },
+];
+
+var _bgAll = null;  // cached list from /api/backgrounds (null = not yet loaded)
+
+function _loadBgPref() {
+  try { return JSON.parse(localStorage.getItem("kb-background") || "null"); } catch(e) { return null; }
+}
+
+function _saveBgPref(pref) {
+  try { localStorage.setItem("kb-background", JSON.stringify(pref)); } catch(e) {}
+}
+
+function _applyBg(pref) {
+  var root = document.documentElement;
+  if (pref && pref.url) {
+    root.style.setProperty("--kb-bg-url", "url('" + pref.url + "')");
+    root.style.setProperty("--kb-bg-size", pref.size || "cover");
+    root.style.setProperty("--kb-bg-opacity", ((pref.opacity != null ? pref.opacity : 100) / 100).toString());
+  } else {
+    root.style.removeProperty("--kb-bg-url");
+    root.style.removeProperty("--kb-bg-size");
+    root.style.removeProperty("--kb-bg-opacity");
+  }
+}
+
+function _uploadBgFile(file) {
+  var zone = document.getElementById("bg-dropzone");
+  if (zone) zone.classList.add("uploading");
+  var form = new FormData();
+  form.append("file", file, file.name);
+  fetch("/api/upload-background", { method: "POST", body: form })
+    .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(data) {
+      var pref = _loadBgPref() || {};
+      pref.url = data.url;
+      _saveBgPref(pref);
+      _applyBg(pref);
+      _bgAll = null;  // invalidate cache so gallery re-fetches
+      loadBgPanel();
+    })
+    .catch(function(err) { alert("Background upload failed: " + err.message); })
+    .finally(function() { if (zone) zone.classList.remove("uploading"); });
+}
+
+function _updateBgControls() {
+  var pref = _loadBgPref();
+  var hasActive = pref && pref.url;
+  var controls = document.getElementById("bg-controls");
+  if (controls) controls.hidden = !hasActive;
+  if (!hasActive) return;
+
+  var sizeEl  = document.getElementById("bg-size-select");
+  var opacEl  = document.getElementById("bg-opacity-range");
+  var opacVal = document.getElementById("bg-opacity-val");
+  if (sizeEl)  sizeEl.value = pref.size || "cover";
+  if (opacEl)  opacEl.value = pref.opacity != null ? pref.opacity : 100;
+  if (opacVal) opacVal.textContent = (pref.opacity != null ? pref.opacity : 100) + "%";
+}
+
+// Shared helper: build a gallery item HTML string.
+function _bgItemHtml(url, filename, isDefault) {
+  var pref = _loadBgPref();
+  var isActive = pref && pref.url === url;
+  var delBtn = isDefault
+    ? ""  // no delete button on built-in defaults
+    : '<button type="button" class="bg-gallery-del" title="Delete">\u2715</button>';
+  return '<div class="bg-gallery-item' + (isActive ? " active" : "") + '"' +
+    ' data-url="' + url + '" data-filename="' + (filename || "") + '">' +
+    '<img class="bg-gallery-thumb" src="' + url + '" alt="">' +
+    '<span class="bg-gallery-badge">Active</span>' +
+    delBtn +
+    '</div>';
+}
+
+// Wire click-to-activate on every item in a given container element.
+function _wireBgGalleryItems(container) {
+  container.querySelectorAll(".bg-gallery-item").forEach(function(item) {
+    item.addEventListener("click", function(e) {
+      if (e.target.classList.contains("bg-gallery-del")) return;
+      var url = item.getAttribute("data-url");
+      var pref = _loadBgPref() || {};
+      pref.url = url;
+      _saveBgPref(pref);
+      _applyBg(pref);
+      _updateBgControls();
+      // Refresh active badge on BOTH galleries
+      _renderBgDefaultsGallery();
+      _renderBgUploadsGallery();
+    });
+
+    // Delete button (only on uploads)
+    var delBtn = item.querySelector(".bg-gallery-del");
+    if (delBtn) {
+      delBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        var filename = item.getAttribute("data-filename");
+        var url      = item.getAttribute("data-url");
+        if (!confirm("Delete this background?\n" + filename)) return;
+        fetch("/api/backgrounds/" + encodeURIComponent(filename), { method: "DELETE" })
+          .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); })
+          .then(function() {
+            var pref = _loadBgPref();
+            if (pref && pref.url === url) {
+              _saveBgPref(null);
+              _applyBg(null);
+              _updateBgControls();
+              _renderBgDefaultsGallery();
+            }
+            _bgAll = null;
+            _renderBgUploadsGallery();
+          })
+          .catch(function(err) { alert("Delete failed: " + err.message); });
+      });
+    }
+  });
+}
+
+function _renderBgDefaultsGallery() {
+  var el = document.getElementById("bg-defaults-gallery");
+  if (!el) return;
+  el.innerHTML = BG_DEFAULTS.map(function(bg) {
+    return _bgItemHtml(bg.url, null, true);
+  }).join("");
+  _wireBgGalleryItems(el);
+}
+
+function _renderBgUploadsGallery() {
+  var el = document.getElementById("bg-gallery");
+  if (!el) return;
+
+  if (!_bgAll || !_bgAll.length) {
+    el.innerHTML = '<p class="bg-gallery-empty">No backgrounds uploaded yet.</p>';
+    return;
+  }
+
+  el.innerHTML = _bgAll.map(function(bg) {
+    return _bgItemHtml(bg.url, bg.filename, false);
+  }).join("");
+  _wireBgGalleryItems(el);
+}
+
+function loadBgPanel() {
+  // Restore controls from saved pref immediately
+  _updateBgControls();
+
+  // Always render the built-in defaults (they need no API call)
+  _renderBgDefaultsGallery();
+
+  // Wire dropzone
+  var zone  = document.getElementById("bg-dropzone");
+  var input = document.getElementById("bg-upload-input");
+  if (zone && !zone._bgWired) {
+    zone._bgWired = true;
+    zone.addEventListener("click", function(e) {
+      if (e.target.tagName === "LABEL" || e.target.tagName === "INPUT") return;
+      input && input.click();
+    });
+    zone.addEventListener("dragover",  function(e) { e.preventDefault(); zone.classList.add("drag-over"); });
+    zone.addEventListener("dragleave", function()  { zone.classList.remove("drag-over"); });
+    zone.addEventListener("drop", function(e) {
+      e.preventDefault();
+      zone.classList.remove("drag-over");
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) _uploadBgFile(file);
+    });
+    if (input) {
+      input.addEventListener("change", function() {
+        var file = input.files && input.files[0];
+        if (file) _uploadBgFile(file);
+        input.value = "";
+      });
+    }
+  }
+
+  // Wire size selector
+  var sizeEl = document.getElementById("bg-size-select");
+  if (sizeEl && !sizeEl._bgWired) {
+    sizeEl._bgWired = true;
+    sizeEl.addEventListener("change", function() {
+      var pref = _loadBgPref() || {};
+      pref.size = sizeEl.value;
+      _saveBgPref(pref);
+      _applyBg(pref);
+    });
+  }
+
+  // Wire opacity slider
+  var opacEl  = document.getElementById("bg-opacity-range");
+  var opacVal = document.getElementById("bg-opacity-val");
+  if (opacEl && !opacEl._bgWired) {
+    opacEl._bgWired = true;
+    opacEl.addEventListener("input", function() {
+      if (opacVal) opacVal.textContent = opacEl.value + "%";
+      var pref = _loadBgPref() || {};
+      pref.opacity = parseInt(opacEl.value, 10);
+      _saveBgPref(pref);
+      _applyBg(pref);
+    });
+  }
+
+  // Wire Remove Background button
+  var removeBtn = document.getElementById("bg-use-default");
+  if (removeBtn && !removeBtn._bgWired) {
+    removeBtn._bgWired = true;
+    removeBtn.addEventListener("click", function() {
+      _saveBgPref(null);
+      _applyBg(null);
+      _updateBgControls();
+      _renderBgDefaultsGallery();
+      _renderBgUploadsGallery();
+    });
+  }
+
+  // Fetch uploaded gallery (use cache if already loaded)
+  var uploadsEl = document.getElementById("bg-gallery");
+  if (!uploadsEl) return;
+  if (_bgAll !== null) {
+    _renderBgUploadsGallery();
+    return;
+  }
+  uploadsEl.innerHTML = '<p class="bg-gallery-empty muted">Loading\u2026</p>';
+  fetch("/api/backgrounds")
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      _bgAll = data;
+      _renderBgUploadsGallery();
+    })
+    .catch(function() {
+      uploadsEl.innerHTML = '<p class="bg-gallery-empty">Failed to load library.</p>';
+    });
+}
