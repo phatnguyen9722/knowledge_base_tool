@@ -28,7 +28,11 @@ The Knowledge Base is split into several purpose-built mini-apps to keep your li
 ---
 ## Quick start
 
-### 1. Install
+### Option 1: Deploy and run with docker
+- [Docker Document](./dockerise/README.md)
+
+### Option 2: Manual running
+#### 1. Install
 
 Requires **Python 3.9+** (3.10+ recommended).
 
@@ -44,7 +48,7 @@ pip install -r requirements.txt
 > On Python 3.9, `python-frontmatter` is pinned to `<1.1` (1.1+ needs 3.10+).
 > This is already handled in `requirements.txt`.
 
-### 2. Run the web app
+#### 2. Run the web app
 
 ```bash
 python cli.py serve            # defaults to http://127.0.0.1:5050
@@ -59,7 +63,7 @@ Open **http://127.0.0.1:5050** in your browser.
 > Either keep 5050, or turn off *System Settings → General → AirDrop & Handoff →
 > AirPlay Receiver* if you really want 5000.
 
-### 3. (Optional) Run with a tray icon
+#### 3. (Optional) Run with a tray icon
 
 ```bash
 python launcher.py
