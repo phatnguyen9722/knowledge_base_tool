@@ -190,7 +190,7 @@ a:hover { text-decoration: underline; }
 .btn-danger { color: var(--danger); border-color: var(--danger); }
 
 /* Feed */
-.feed-head { display: flex; align-items: baseline; gap: .75rem; }
+.feed-head { display: flex; align-items: baseline; gap: .75rem; margin-bottom: 1rem;}
 .feed-head h1 { margin: 0; }
 .head-action { margin-left: auto; align-self: center; }
 .feed { list-style: none; padding: 0; margin: 1rem 0; }
@@ -273,8 +273,8 @@ a:hover { text-decoration: underline; }
   mask-image: linear-gradient(#000 72%, transparent);
 }
 .note-content > :first-child { margin-top: 0; }
-.note-actions { display: flex; gap: .5rem; margin-top: .35rem; }
-.note-actions form { margin: 0; }
+.note-actions { display: flex; align-items: center; gap: .5rem; margin-top: .35rem; }
+.note-actions form { display: contents; } /* form is invisible to flex so <button> aligns with <a> */
 
 /* Per-note themes (card background patterns) */
 .note-theme-lines {
