@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/static/style.css?v={{ asset_v() }}">
   <!-- No-flash: apply theme + hide disabled features before first paint. -->
   <style id="feature-hide-style"></style>
+  <style id="header-hide-style"></style>
   <script>
     (function () {
       try {
@@ -22,6 +23,15 @@
             css += '[data-feature-app="' + app + '"]{display:none!important}';
         });
         if (css) document.getElementById("feature-hide-style").textContent = css;
+      } catch (e) {}
+      try {
+        var happs = JSON.parse(localStorage.getItem("kb-header-apps") || "{}");
+        var css2 = "";
+        Object.keys(happs).forEach(function (app) {
+          if (happs[app] === false)
+            css2 += '[data-header-app="' + app + '"]{display:none!important}';
+        });
+        if (css2) document.getElementById("header-hide-style").textContent = css2;
       } catch (e) {}
     })();
   </script>
@@ -38,13 +48,14 @@
       </form>
       <div id="search-results" class="search-results" hidden></div>
     </div>
-    <a class="btn" data-feature-app="bookmarks" href="/bookmarks"><span class="app-icon" data-app="bookmarks">🔖</span> Bookmarks</a>
-    <a class="btn" data-feature-app="api-docs" href="/api-docs"><span class="app-icon" data-app="api-docs">📄</span> API Docs</a>
-    <a class="btn" data-feature-app="notes"    href="/notes"><span class="app-icon" data-app="notes">🗒️</span> Notes</a>
-    <a class="btn" data-feature-app="books"    href="/books"><span class="app-icon" data-app="books">📖</span> Books</a>
-    <a class="btn" data-feature-app="music"    href="/music"><span class="app-icon" data-app="music">🎵</span> Music</a>
-    <a class="btn" data-feature-app="toeic"    href="/toeic"><span class="app-icon" data-app="toeic">🎧</span> TOEIC</a>
-    <a class="btn" data-feature-app="series"   href="/series"><span class="app-icon" data-app="series">📚</span> Series</a>
+    <a class="btn" data-feature-app="posts"    data-header-app="posts"    href="/posts"><span class="app-icon" data-app="posts">📝</span> Posts</a>
+    <a class="btn" data-feature-app="bookmarks" data-header-app="bookmarks" href="/bookmarks"><span class="app-icon" data-app="bookmarks">🔖</span> Bookmarks</a>
+    <a class="btn" data-feature-app="api-docs" data-header-app="api-docs" href="/api-docs"><span class="app-icon" data-app="api-docs">📄</span> API Docs</a>
+    <a class="btn" data-feature-app="notes"    data-header-app="notes"    href="/notes"><span class="app-icon" data-app="notes">🗒️</span> Notes</a>
+    <a class="btn" data-feature-app="books"    data-header-app="books"    href="/books"><span class="app-icon" data-app="books">📖</span> Books</a>
+    <a class="btn" data-feature-app="music"    data-header-app="music"    href="/music"><span class="app-icon" data-app="music">🎵</span> Music</a>
+    <a class="btn" data-feature-app="toeic"    data-header-app="toeic"    href="/toeic"><span class="app-icon" data-app="toeic">🎧</span> TOEIC</a>
+    <a class="btn" data-feature-app="series"   data-header-app="series"   href="/series"><span class="app-icon" data-app="series">📚</span> Series</a>
     <!-- Fixed right-side controls — never move regardless of feature visibility -->
     <div class="topbar-fixed">
       <button class="btn btn-ghost" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
@@ -69,6 +80,7 @@
         <div class="settings-sidebar-title">Settings</div>
         <button class="settings-nav-item active" data-panel="theme">🎨 Theme</button>
         <button class="settings-nav-item" data-panel="features">⚡ Features</button>
+        <button class="settings-nav-item" data-panel="header-apps">🔝 Header Apps</button>
         <button class="settings-nav-item" data-panel="app-icons">🖼 App Icons</button>
         <button class="settings-nav-item" data-panel="icon-library">📂 Icon Library</button>
       </nav>
@@ -124,6 +136,22 @@
             <button type="button" id="features-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
           </div>
           <div id="features-panel-list"></div>
+        </div>
+
+        <!-- Header Apps panel -->
+        <div class="settings-panel" id="panel-header-apps" hidden>
+          <h3 class="settings-panel-title">Header Apps</h3>
+          <p class="muted settings-panel-desc">
+            Toggle which applications appear in the top navigation bar.
+          </p>
+          <div class="features-search-wrap">
+            <span class="features-search-icon">🔍</span>
+            <input type="search" id="header-apps-search-input"
+                   placeholder="Search apps…"
+                   autocomplete="off" aria-label="Search header apps">
+            <button type="button" id="header-apps-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
+          </div>
+          <div id="header-apps-panel-list"></div>
         </div>
 
         <!-- App Icons panel -->

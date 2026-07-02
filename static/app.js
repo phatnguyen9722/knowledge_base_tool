@@ -136,6 +136,7 @@ var APP_LABELS = {
     });
     // Lazy-refresh dynamic panels when they become visible
     if (id === "features")     buildFeaturesPanel();
+    if (id === "header-apps")  buildHeaderAppsPanel();
     if (id === "app-icons")    buildIconPicker();
     if (id === "icon-library") loadIconLibrary();
   }
@@ -613,7 +614,135 @@ function buildFeaturesPanel() {
 }
 
 
-// App icon management — Settings → Modify App
+// ---------------------------------------------------------------------------
+// Header Apps management — Settings → Header Apps
+// ---------------------------------------------------------------------------
+
+function _loadHeaderApps() {
+  try { return JSON.parse(localStorage.getItem("kb-header-apps") || "{}"); } catch (e) { return {}; }
+}
+function _saveHeaderApps(h) {
+  try { localStorage.setItem("kb-header-apps", JSON.stringify(h)); } catch (e) {}
+}
+
+function setHeaderApp(app, enabled) {
+  var h = _loadHeaderApps();
+  if (enabled) {
+    delete h[app];           // default is on → remove the key entirely
+  } else {
+    h[app] = false;
+  }
+  _saveHeaderApps(h);
+  applyHeaderApps();
+}
+
+// Show/hide [data-header-app="..."] elements based on stored prefs.
+function applyHeaderApps() {
+  var h = _loadHeaderApps();
+  FEATURE_LIST.forEach(function (feat) {
+    var hidden = h[feat.app] === false;
+    document.querySelectorAll('[data-header-app="' + feat.app + '"]').forEach(function (el) {
+      el.style.display = hidden ? "none" : "";
+    });
+  });
+}
+
+// Render the toggle-switch list in the Header Apps panel.
+function buildHeaderAppsPanel() {
+  var list = document.getElementById("header-apps-panel-list");
+  if (!list) return;
+  var h = _loadHeaderApps();
+  list.innerHTML = FEATURE_LIST.map(function (feat) {
+    var enabled = h[feat.app] !== false;
+    var globalEnabled = isFeatureEnabled(feat.app);
+    return '<div class="feature-row"' + (!globalEnabled ? ' style="opacity: 0.5"' : '') +
+      ' data-label="' + feat.label.toLowerCase() + '"' +
+      ' data-desc="'  + (feat.desc || "").toLowerCase() + '"' +
+      ' data-app="' + feat.app + '">' +
+      '<div class="feature-row-info">' +
+        '<span class="feature-row-label">' + feat.label + '</span>' +
+        (feat.desc ? '<span class="feature-row-desc">' + feat.desc + '</span>' : '') +
+      '</div>' +
+      '<label class="toggle-switch"' + (!globalEnabled ? ' style="cursor: not-allowed"' : '') + '>' +
+        '<input type="checkbox" data-header-toggle="' + feat.app + '"' + (enabled ? ' checked' : '') + '>' +
+        '<span class="toggle-slider"></span>' +
+      '</label>' +
+    '</div>';
+  }).join('');
+
+  list.querySelectorAll(".feature-row").forEach(function (row) {
+    var app = row.getAttribute("data-app");
+    var label = row.querySelector(".feature-row-label").textContent;
+    if (!isFeatureEnabled(app)) {
+      row.querySelector(".toggle-switch").addEventListener("click", function (e) {
+        e.preventDefault();
+        alert("Please enable the '" + label + "' app in the Features panel first.");
+      });
+    }
+  });
+
+  list.querySelectorAll("[data-header-toggle]").forEach(function (cb) {
+    cb.addEventListener("change", function () {
+      setHeaderApp(cb.getAttribute("data-header-toggle"), cb.checked);
+    });
+  });
+
+  // Wire search input — use a named handler stored on the element
+  var searchInput = document.getElementById("header-apps-search-input");
+  var clearBtn    = document.getElementById("header-apps-search-clear");
+  if (!searchInput) return;
+
+  function applyHeaderSearch() {
+    var q = searchInput.value.trim().toLowerCase();
+    var anyVisible = false;
+    list.querySelectorAll(".feature-row").forEach(function (row) {
+      var match = !q ||
+        row.getAttribute("data-label").indexOf(q) !== -1 ||
+        row.getAttribute("data-desc").indexOf(q)  !== -1;
+      row.style.display = match ? "" : "none";
+      if (match) anyVisible = true;
+    });
+    // Empty-state message
+    var empty = list.querySelector(".features-empty");
+    if (!anyVisible) {
+      if (!empty) {
+        empty = document.createElement("p");
+        empty.className = "features-empty muted";
+        empty.style.fontSize = ".88rem";
+        empty.style.margin = ".5rem 0";
+        list.appendChild(empty);
+      }
+      empty.textContent = 'No apps match "' + searchInput.value.trim() + '".';
+    } else if (empty) {
+      empty.remove();
+    }
+    if (clearBtn) clearBtn.hidden = !q;
+  }
+
+  if (searchInput._headerSearchHandler) {
+    searchInput.removeEventListener("input",  searchInput._headerSearchHandler);
+    searchInput.removeEventListener("search", searchInput._headerSearchHandler);
+  }
+  searchInput._headerSearchHandler = applyHeaderSearch;
+  searchInput.addEventListener("input",  applyHeaderSearch);
+  searchInput.addEventListener("search", applyHeaderSearch);
+
+  if (clearBtn) {
+    if (clearBtn._headerClearHandler) {
+      clearBtn.removeEventListener("click", clearBtn._headerClearHandler);
+    }
+    clearBtn._headerClearHandler = function () {
+      searchInput.value = "";
+      applyHeaderSearch();
+      searchInput.focus();
+    };
+    clearBtn.addEventListener("click", clearBtn._headerClearHandler);
+  }
+
+  // Re-apply the current filter in case panel is re-opened with text still present
+  applyHeaderSearch();
+}
+
 // (APP_ICONS_DEFAULT and APP_LABELS are defined at the top of this file)
 // ---------------------------------------------------------------------------
 

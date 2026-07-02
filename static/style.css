@@ -688,6 +688,7 @@ mark { background: var(--mark); }
 }
 #features-search-input,
 #theme-search-input,
+#header-apps-search-input,
 #icons-search-input {
   flex: 1; border: none; background: transparent;
   padding: .42rem .4rem .42rem 0; color: var(--fg);
@@ -696,6 +697,7 @@ mark { background: var(--mark); }
 }
 #features-search-input::placeholder,
 #theme-search-input::placeholder,
+#header-apps-search-input::placeholder,
 #icons-search-input::placeholder { color: var(--muted); }
 .features-search-clear {
   border: none; background: transparent; cursor: pointer;
