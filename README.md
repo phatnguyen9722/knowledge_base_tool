@@ -12,6 +12,20 @@ icon, with **no terminal needed** once it's running.
 
 ---
 
+## What's Inside?
+
+The Knowledge Base is split into several purpose-built mini-apps to keep your life organized. You can toggle them on or off in the **Settings**!
+
+- **📝 Posts** — Your core notes and articles with tags and lightning-fast full-text search.
+- **📚 Series** — Multi-part topics linked in chronological order.
+- **📖 Books** — Collections of chapters for novels, guides, and long reads.
+- **🎧 TOEIC** — Practice listening and reading sets with radio answers & explanations.
+- **🎵 Music** — Your personal audio library with imported tracks and editable metadata.
+- **🗒️ Notes** — Quick, colorful sticky notes. Pin your favorites to the top!
+- **📄 API Docs** — Document your REST APIs (endpoints, params, and responses).
+- **🔖 Bookmarks** — Saved web links organised by tags and categories.
+
+---
 ## Quick start
 
 ### 1. Install
