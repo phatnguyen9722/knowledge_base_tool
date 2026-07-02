@@ -1070,3 +1070,59 @@ function legacyCopy(text, done) {
   }
   document.body.removeChild(ta);
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  // --- Bulk Action Buttons (Settings Panels) ---
+  const btnFeatEn = document.getElementById("features-enable-all");
+  if (btnFeatEn) {
+    btnFeatEn.addEventListener("click", function() {
+      _saveFeatures({}); // Default is enabled
+      applyFeatures();
+      buildFeaturesPanel();
+      if (typeof buildHeaderAppsPanel === "function") buildHeaderAppsPanel();
+    });
+  }
+
+  const btnFeatDis = document.getElementById("features-disable-all");
+  if (btnFeatDis) {
+    btnFeatDis.addEventListener("click", function() {
+      var f = {};
+      FEATURE_LIST.forEach(function(feat) { f[feat.app] = false; });
+      _saveFeatures(f);
+      applyFeatures();
+      buildFeaturesPanel();
+      if (typeof buildHeaderAppsPanel === "function") buildHeaderAppsPanel();
+    });
+  }
+
+  const btnHeadEn = document.getElementById("header-apps-enable-all");
+  if (btnHeadEn) {
+    btnHeadEn.addEventListener("click", function() {
+      _saveHeaderApps({});
+      applyHeaderApps();
+      buildHeaderAppsPanel();
+    });
+  }
+
+  const btnHeadDis = document.getElementById("header-apps-disable-all");
+  if (btnHeadDis) {
+    btnHeadDis.addEventListener("click", function() {
+      var h = {};
+      FEATURE_LIST.forEach(function(feat) { h[feat.app] = false; });
+      _saveHeaderApps(h);
+      applyHeaderApps();
+      buildHeaderAppsPanel();
+    });
+  }
+
+  const btnIconReset = document.getElementById("icons-reset-all");
+  if (btnIconReset) {
+    btnIconReset.addEventListener("click", function() {
+      if (confirm("Reset all app icons to default emojis?")) {
+        _saveIcons({});
+        applyAppIcons();
+        buildIconPicker();
+      }
+    });
+  }
+});

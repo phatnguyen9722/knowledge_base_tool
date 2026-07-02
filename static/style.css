@@ -804,6 +804,8 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
   font-size: 1rem; font-weight: 700; margin: 0 0 .2rem;
 }
 .settings-panel-desc { font-size: .82rem; margin: 0 0 .85rem; }
+.panel-bulk-actions { display: flex; gap: .5rem; margin-bottom: .85rem; }
+.panel-bulk-actions .btn { flex: 1; padding: .3rem; font-size: .85rem; justify-content: center; }
 .settings-footer { margin-top: auto; padding-top: 1rem; }
 
 /* Kept for theme grid / picker elements inside panels */
