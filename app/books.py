@@ -7,13 +7,21 @@ Layout under ``books/``:
         _collection.md        # collection metadata (title, author, description)
         01-the-boy-who-lived.md
         02-the-vanishing-glass.md
+        resources/
+          my-book.pdf         # imported binary book files
+          another.epub
 
 A **collection** must exist before chapters can be added to it. Each chapter is
 a markdown file with frontmatter (title, order) plus the chapter body.
+
+Resource books are binary files (PDF, EPUB, MOBI, CBZ, FB2, XPS) stored in
+``books/<coll>/resources/`` and rendered on demand via PyMuPDF.
 """
 
 from __future__ import annotations
 
+import io
+import mimetypes
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -21,7 +29,16 @@ from pathlib import Path
 import frontmatter
 from slugify import slugify
 
-__all__ = ["Chapter", "Collection", "BookManager"]
+__all__ = ["Chapter", "Collection", "ResourceBook", "BookManager"]
+
+# File formats supported for import
+RESOURCE_EXTENSIONS = {".pdf", ".epub", ".mobi", ".cbz", ".fb2", ".xps", ".azw", ".azw3"}
+
+# Formats where we render as page images (binary/visual formats)
+IMAGE_RENDER_FORMATS = {".pdf", ".cbz", ".xps"}
+
+# Formats where we extract flowing text/HTML
+TEXT_RENDER_FORMATS = {".epub", ".mobi", ".fb2", ".azw", ".azw3"}
 
 _META = "_collection.md"
 _RESERVED = {"new"}  # slugs that would collide with routes
@@ -36,6 +53,32 @@ class Chapter:
     created: str = ""
     updated: str = ""
     content: str = ""
+
+
+@dataclass
+class ResourceBook:
+    filename: str          # e.g. "my-novel.pdf"
+    collection: str        # parent collection slug
+    size_bytes: int = 0
+    ext: str = ""          # lowercase extension e.g. ".pdf"
+
+    @property
+    def display_name(self) -> str:
+        return self.filename
+
+    @property
+    def is_image_render(self) -> bool:
+        return self.ext in IMAGE_RENDER_FORMATS
+
+    @property
+    def is_text_render(self) -> bool:
+        return self.ext in TEXT_RENDER_FORMATS
+
+    @property
+    def format_icon(self) -> str:
+        icons = {".pdf": "📄", ".epub": "📗", ".mobi": "📘", ".cbz": "🗂️",
+                 ".fb2": "📙", ".xps": "📋", ".azw": "📘", ".azw3": "📘"}
+        return icons.get(self.ext, "📁")
 
 
 @dataclass
@@ -217,3 +260,123 @@ class BookManager:
         fm = frontmatter.Post(data.get("content", ""), **meta)
         self._chapter_path(coll, slug).write_text(frontmatter.dumps(fm), encoding="utf-8")
         return slug
+
+    # ------------------------------------------------------------------ #
+    # Resource Books (binary files: PDF, EPUB, MOBI, CBZ, ...)
+    # ------------------------------------------------------------------ #
+
+    def _resources_dir(self, coll: str) -> Path:
+        d = self._coll_dir(coll) / "resources"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+
+    def _resource_path(self, coll: str, filename: str) -> Path:
+        return self._resources_dir(coll) / filename
+
+    def list_resources(self, coll: str) -> list[ResourceBook]:
+        """Return all imported resource files for a collection."""
+        rdir = self._resources_dir(coll)
+        out = []
+        for f in sorted(rdir.iterdir()):
+            if f.is_file() and f.suffix.lower() in RESOURCE_EXTENSIONS:
+                out.append(ResourceBook(
+                    filename=f.name,
+                    collection=coll,
+                    size_bytes=f.stat().st_size,
+                    ext=f.suffix.lower(),
+                ))
+        return out
+
+    def save_resource(self, coll: str, filename: str, data: bytes) -> bool:
+        """Save uploaded binary file to the resources directory."""
+        if not self._meta_path(coll).exists():
+            return False
+        ext = Path(filename).suffix.lower()
+        if ext not in RESOURCE_EXTENSIONS:
+            return False
+        path = self._resource_path(coll, filename)
+        path.write_bytes(data)
+        return True
+
+    def delete_resource(self, coll: str, filename: str) -> bool:
+        """Delete a resource file."""
+        path = self._resource_path(coll, filename)
+        if not path.exists():
+            return False
+        path.unlink()
+        return True
+
+    def resource_page_count(self, coll: str, filename: str) -> int:
+        """Return total page / chapter count for a resource."""
+        try:
+            import fitz  # PyMuPDF
+            path = self._resource_path(coll, filename)
+            if not path.exists():
+                return 0
+            doc = fitz.open(str(path))
+            count = doc.page_count
+            doc.close()
+            return count
+        except Exception:
+            return 0
+
+    def resource_page_image(self, coll: str, filename: str, page_n: int) -> bytes | None:
+        """Render a page of a PDF/CBZ/XPS as PNG bytes (for image-render formats)."""
+        try:
+            import fitz  # PyMuPDF
+            path = self._resource_path(coll, filename)
+            if not path.exists():
+                return None
+            doc = fitz.open(str(path))
+            if page_n < 0 or page_n >= doc.page_count:
+                doc.close()
+                return None
+            page = doc.load_page(page_n)
+            # 2x resolution for sharp rendering
+            mat = fitz.Matrix(2, 2)
+            pix = page.get_pixmap(matrix=mat)
+            png_bytes = pix.tobytes("png")
+            doc.close()
+            return png_bytes
+        except Exception:
+            return None
+
+    def resource_text_chapters(self, coll: str, filename: str) -> list[dict]:
+        """Extract chapters/sections from EPUB/MOBI/FB2 for text-render formats.
+        Returns list of dicts: [{title, html, index}]
+        """
+        try:
+            import fitz  # PyMuPDF
+            path = self._resource_path(coll, filename)
+            if not path.exists():
+                return []
+            doc = fitz.open(str(path))
+            toc = doc.get_toc()  # [[level, title, page], ...]
+            chapters = []
+            if toc:
+                # Group pages by TOC entries
+                for i, entry in enumerate(toc):
+                    level, title, start_page = entry
+                    end_page = toc[i + 1][2] if i + 1 < len(toc) else doc.page_count
+                    html_parts = []
+                    for p in range(start_page - 1, min(end_page, doc.page_count)):
+                        page = doc.load_page(p)
+                        html_parts.append(page.get_text("html"))
+                    chapters.append({
+                        "index": i,
+                        "title": title,
+                        "html": "".join(html_parts),
+                    })
+            else:
+                # No TOC — treat entire doc as one chapter per page
+                for p in range(doc.page_count):
+                    page = doc.load_page(p)
+                    chapters.append({
+                        "index": p,
+                        "title": f"Page {p + 1}",
+                        "html": page.get_text("html"),
+                    })
+            doc.close()
+            return chapters
+        except Exception:
+            return []

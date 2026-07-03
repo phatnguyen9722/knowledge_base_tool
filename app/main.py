@@ -14,7 +14,7 @@ from urllib.parse import urlencode
 
 import mistune
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -411,6 +411,99 @@ async def book_chapter_create(
     return RedirectResponse(f"/books/{coll}/{slug}", status_code=303)
 
 
+# --------------------------------------------------------------------------- #
+# Book Resources (imported binary files: PDF, EPUB, MOBI, CBZ, ...)
+# MUST be above /{coll}/{chapter} to avoid being captured by that catch-all.
+# --------------------------------------------------------------------------- #
+
+@app.get("/books/{coll}/resources", response_class=HTMLResponse)
+async def book_resources_list(request: Request, coll: str):
+    collection = books.read_collection(coll, with_chapters=False)
+    if not collection:
+        raise HTTPException(404)
+    resources = books.list_resources(coll)
+    return templates.TemplateResponse(
+        request, "book_resources.html",
+        {"collection": collection, "resources": resources}
+    )
+
+
+@app.post("/books/{coll}/resources/upload")
+async def book_resource_upload(coll: str, file: UploadFile = File(...)):
+    collection = books.read_collection(coll, with_chapters=False)
+    if not collection:
+        raise HTTPException(404)
+    data = await file.read()
+    ok = books.save_resource(coll, file.filename, data)
+    if not ok:
+        raise HTTPException(400, "Unsupported file type or collection not found.")
+    return RedirectResponse(f"/books/{coll}/resources", status_code=303)
+
+
+@app.get("/books/{coll}/resources/{fname}/page/{page_n}", response_class=Response)
+async def book_resource_page_image(coll: str, fname: str, page_n: int):
+    """Serve a single rendered page as a PNG image."""
+    png = books.resource_page_image(coll, fname, page_n)
+    if png is None:
+        raise HTTPException(404)
+    return Response(content=png, media_type="image/png")
+
+
+@app.get("/books/{coll}/resources/{fname}/read", response_class=HTMLResponse)
+async def book_resource_reader(request: Request, coll: str, fname: str, page: int = 0):
+    collection = books.read_collection(coll, with_chapters=False)
+    if not collection:
+        raise HTTPException(404)
+    resource_path = books._resource_path(coll, fname)
+    if not resource_path.exists():
+        raise HTTPException(404)
+
+    from app.books import IMAGE_RENDER_FORMATS
+    ext = resource_path.suffix.lower()
+    is_image = ext in IMAGE_RENDER_FORMATS
+
+    if is_image:
+        total_pages = books.resource_page_count(coll, fname)
+        page = max(0, min(page, total_pages - 1))
+        return templates.TemplateResponse(
+            request, "book_reader.html",
+            {
+                "collection": collection,
+                "fname": fname,
+                "mode": "image",
+                "page": page,
+                "total_pages": total_pages,
+                "prev_page": page - 1 if page > 0 else None,
+                "next_page": page + 1 if page < total_pages - 1 else None,
+            }
+        )
+    else:
+        chapters = books.resource_text_chapters(coll, fname)
+        page = max(0, min(page, len(chapters) - 1))
+        current_chapter = chapters[page] if chapters else {"title": "Empty", "html": ""}
+        return templates.TemplateResponse(
+            request, "book_reader.html",
+            {
+                "collection": collection,
+                "fname": fname,
+                "mode": "text",
+                "page": page,
+                "total_pages": len(chapters),
+                "prev_page": page - 1 if page > 0 else None,
+                "next_page": page + 1 if page < len(chapters) - 1 else None,
+                "chapters": chapters,
+                "current_chapter": current_chapter,
+            }
+        )
+
+
+@app.post("/books/{coll}/resources/{fname}/delete")
+async def book_resource_delete(coll: str, fname: str):
+    if not books.delete_resource(coll, fname):
+        raise HTTPException(404)
+    return RedirectResponse(f"/books/{coll}/resources", status_code=303)
+
+
 @app.get("/books/{coll}/{chapter}", response_class=HTMLResponse)
 async def book_chapter_read(request: Request, coll: str, chapter: str):
     collection = books.read_collection(coll)
@@ -436,6 +529,7 @@ async def book_chapter_read(request: Request, coll: str, chapter: str):
             "next": members[idx + 1] if idx < len(members) - 1 else None,
         },
     )
+
 
 
 # --------------------------------------------------------------------------- #

@@ -9,3 +9,4 @@ mistune>=3
 python-slugify
 pyyaml
 python-multipart
+pymupdf>=1.24

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ fname }} — Reader{% endblock %}
+
+{% block content %}
+<div class="book-reader-wrap">
+
+  <!-- Reader Header -->
+  <div class="book-reader-header">
+    <a class="book-reader-back" href="/books/{{ collection.slug }}/resources">
+      ← {{ collection.title }}
+    </a>
+    <div class="book-reader-title" title="{{ fname }}">{{ fname }}</div>
+    <div class="book-reader-page-info">
+      {{ page + 1 }} / {{ total_pages }}
+    </div>
+  </div>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- IMAGE READER (PDF, CBZ, XPS)                                     -->
+  <!-- ---------------------------------------------------------------- -->
+  {% if mode == "image" %}
+  <div class="book-reader-image-wrap" id="page-wrap">
+    <img id="page-img"
+         src="/books/{{ collection.slug }}/resources/{{ fname }}/page/{{ page }}"
+         alt="Page {{ page + 1 }}"
+         class="book-reader-img"
+         onload="this.classList.add('loaded')">
+    <div class="book-reader-img-loading" id="img-loading">Loading page…</div>
+  </div>
+
+  <!-- ---------------------------------------------------------------- -->
+  <!-- TEXT READER (EPUB, MOBI, FB2, …)                                 -->
+  <!-- ---------------------------------------------------------------- -->
+  {% elif mode == "text" %}
+  <div class="book-reader-text-wrap" id="page-wrap">
+    <div class="book-reader-chapter-title">{{ current_chapter.title }}</div>
+    <div class="book-reader-text-content">
+      {{ current_chapter.html | safe }}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Navigation Bar -->
+  <div class="book-reader-nav">
+    {% if prev_page is not none %}
+    <a class="btn book-reader-nav-btn" id="btn-prev"
+       href="/books/{{ collection.slug }}/resources/{{ fname }}/read?page={{ prev_page }}"
+       title="Previous (←)">
+      ← Prev
+    </a>
+    {% else %}
+    <span class="btn book-reader-nav-btn disabled">← Prev</span>
+    {% endif %}
+
+    <!-- Page jump -->
+    <form method="get" action="/books/{{ collection.slug }}/resources/{{ fname }}/read"
+          class="book-reader-jump-form">
+      <input type="number" name="page" min="0" max="{{ total_pages - 1 }}"
+             value="{{ page }}" class="book-reader-jump-input"
+             title="Jump to page (0-indexed)">
+      <button type="submit" class="btn btn-sm">Go</button>
+    </form>
+
+    {% if next_page is not none %}
+    <a class="btn book-reader-nav-btn" id="btn-next"
+       href="/books/{{ collection.slug }}/resources/{{ fname }}/read?page={{ next_page }}"
+       title="Next (→)">
+      Next →
+    </a>
+    {% else %}
+    <span class="btn book-reader-nav-btn disabled">Next →</span>
+    {% endif %}
+  </div>
+
+  <!-- Chapter TOC sidebar (text mode) -->
+  {% if mode == "text" and chapters %}
+  <details class="book-reader-toc">
+    <summary class="book-reader-toc-toggle">📑 Table of Contents ({{ chapters|length }} chapters)</summary>
+    <ul class="book-reader-toc-list">
+      {% for ch in chapters %}
+      <li class="{{ 'active' if ch.index == page else '' }}">
+        <a href="/books/{{ collection.slug }}/resources/{{ fname }}/read?page={{ ch.index }}">
+          {{ ch.title }}
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+</div>
+
+<script>
+  // Keyboard navigation
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      const btn = document.getElementById('btn-prev');
+      if (btn) btn.click();
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      const btn = document.getElementById('btn-next');
+      if (btn) btn.click();
+    }
+  });
+
+  // Hide loading indicator when image loads
+  const img = document.getElementById('page-img');
+  const loading = document.getElementById('img-loading');
+  if (img && loading) {
+    img.addEventListener('load', () => { loading.style.display = 'none'; });
+    img.addEventListener('error', () => { loading.textContent = '⚠ Could not load page image.'; });
+  }
+</script>
+{% endblock %}
