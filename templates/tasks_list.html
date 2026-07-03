@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Tasks – Knowledge Base{% endblock %}
+
+{% block sidebar %}
+  <section class="facet">
+    <h2>Find</h2>
+    <form class="notes-search" action="/tasks" method="get" role="search">
+      <input type="search" name="q" value="{{ q }}" placeholder="Filter tasks…"
+             autocomplete="off">
+    </form>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>✅ Tasks</h1>
+    <span class="muted">{{ tasks|length }} task{{ '' if tasks|length == 1 else 's' }}</span>
+    <a class="btn btn-primary head-action" href="/tasks/new">+ New Task</a>
+  </div>
+
+  {% if q %}
+  <p class="muted">
+    Filtered by “{{ q }}” · <a href="/tasks">reset</a>
+  </p>
+  {% endif %}
+
+  {% if not tasks %}
+    <p class="muted empty">{% if q %}No tasks match.{% else %}No tasks yet. Get productive →{% endif %}</p>
+  {% endif %}
+
+  <div class="notes-grid">
+    {% for t in tasks %}
+    {% set done = t.latest.subtasks | selectattr('status', 'equalto', 'done') | list | length %}
+    {% set total = t.latest.subtasks | length %}
+    <article class="note-box note-theme-plain">
+      <a class="note-open" href="/tasks/{{ t.slug }}" aria-label="Open {{ t.title }}"></a>
+      <div class="note-box-head">
+        <h2 class="note-title">{{ t.title }}</h2>
+      </div>
+      <time class="note-date muted" style="margin-bottom:0">v{{ t.latest.version }} · Updated {{ t.latest.updated[:10] }}</time>
+      <div class="muted" style="font-size:0.8rem; margin-bottom:.5rem;">by <strong>{{ t.latest.user }}</strong></div>
+      
+      <div class="task-progress" style="margin-top: .5rem; margin-bottom: 1rem;">
+        <div class="progress-bar" style="background: var(--bg-alt); height: 8px; border-radius: 4px; overflow: hidden; display: flex;">
+          {% set in_progress = t.latest.subtasks | selectattr('status', 'equalto', 'in-progress') | list | length %}
+          
+          {% set pct_done = (done / total * 100) if total > 0 else 0 %}
+          {% set pct_prog = (in_progress / total * 100) if total > 0 else 0 %}
+          
+          <div style="width: {{ pct_done }}%; background: #4CAF50;"></div>
+          <div style="width: {{ pct_prog }}%; background: #FFC107;"></div>
+        </div>
+        <div class="muted" style="font-size: .8rem; margin-top: .3rem;">
+          {{ done }}/{{ total }} subtasks done
+        </div>
+      </div>
+      
+      <div class="note-actions">
+        <a class="btn" href="/tasks/{{ t.slug }}/edit">Edit</a>
+        <form method="post" action="/tasks/{{ t.slug }}/delete"
+              onsubmit="return confirm('Delete this entire task and its history?')">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+{% endblock %}

@@ -30,6 +30,7 @@ class Settings:
     books_dir: Path
     music_dir: Path
     notes_dir: Path
+    tasks_dir: Path
     api_docs_dir: Path
     bookmarks_dir: Path
     db_path: Path
@@ -60,6 +61,8 @@ def load_settings(base: Path | None = None) -> Settings:
     music_dir = base / data.get("music_dir", "music")
     # Quick notes (Title / date / content) with pin-to-favorite.
     notes_dir = base / data.get("notes_dir", "notes")
+    # Tasks with version history
+    tasks_dir = base / data.get("tasks_dir", "tasks")
     api_docs_dir = base / data.get("api_docs_dir", "api-docs")
     bookmarks_dir = base / data.get("bookmarks_dir", "bookmarks")
     return Settings(
@@ -70,6 +73,7 @@ def load_settings(base: Path | None = None) -> Settings:
         books_dir=books_dir,
         music_dir=music_dir,
         notes_dir=notes_dir,
+        tasks_dir=tasks_dir,
         api_docs_dir=api_docs_dir,
         bookmarks_dir=bookmarks_dir,
         db_path=base / data.get("db_path", ".kb/search.db"),

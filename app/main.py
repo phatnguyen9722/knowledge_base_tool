@@ -27,6 +27,7 @@ from .music import MusicManager
 from .notes import NOTE_THEMES, NoteManager
 from .post_manager import PostManager
 from .tag_manager import TagManager
+from .tasks import TaskManager
 from .toeic import ToeicManager, parse_listening
 
 # --------------------------------------------------------------------------- #
@@ -41,6 +42,7 @@ MUSIC_DIR = _settings.music_dir
 NOTES_DIR = _settings.notes_dir
 API_DOCS_DIR = _settings.api_docs_dir
 BOOKMARKS_DIR = _settings.bookmarks_dir
+TASKS_DIR = _settings.tasks_dir
 DB_PATH = _settings.db_path
 TEMPLATES = _settings.templates
 STATIC = _settings.static
@@ -117,6 +119,7 @@ music = MusicManager(MUSIC_DIR)
 notes = NoteManager(NOTES_DIR)
 api_docs = ApiDocsManager(API_DOCS_DIR)
 bmarks = BookmarksManager(BOOKMARKS_DIR)
+tasks_mgr = TaskManager(TASKS_DIR)
 
 
 def _parse_tags(raw: str) -> list[str]:
@@ -180,6 +183,9 @@ async def home(request: Request):
         {"icon": "🔖", "app": "bookmarks", "title": "Bookmarks", "href": "/bookmarks",
          "desc": "Saved links organised by tags and category.",
          "count": len(bmarks.list())},
+        {"icon": "✅", "app": "tasks", "title": "Tasks", "href": "/tasks",
+         "desc": "Task tracking with subtasks and version history.",
+         "count": len(tasks_mgr.list())},
     ]
     return templates.TemplateResponse(request, "home.html", {"features": features})
 
@@ -907,6 +913,116 @@ async def bookmark_delete(slug: str):
     if not bmarks.delete(slug):
         raise HTTPException(404)
     return RedirectResponse("/bookmarks", status_code=303)
+
+
+# --------------------------------------------------------------------------- #
+# Tasks
+# --------------------------------------------------------------------------- #
+
+@app.get("/tasks", response_class=HTMLResponse)
+def get_tasks(request: Request, q: str = ""):
+    tsks = tasks_mgr.list(q=q)
+    return templates.TemplateResponse(request, "tasks_list.html", {
+        "tasks": tsks, "q": q
+    })
+
+
+@app.get("/tasks/new", response_class=HTMLResponse)
+def new_task_form(request: Request):
+    return templates.TemplateResponse(request, "task_edit.html", {"task": None})
+
+
+@app.post("/tasks/new")
+async def create_task(request: Request):
+    form = await request.form()
+    
+    subtasks = []
+    i = 0
+    # form entries might be unordered or missing due to JS removing items,
+    # so we iterate through all keys to find st_title_*
+    st_keys = [k for k in form.keys() if k.startswith("st_title_")]
+    for k in st_keys:
+        idx = k.replace("st_title_", "")
+        t = form.get(f"st_title_{idx}", "").strip()
+        s = form.get(f"st_status_{idx}", "to-do")
+        if t:
+            subtasks.append({"title": t, "status": s})
+            
+    slug = tasks_mgr.create({
+        "title": form.get("title", ""),
+        "user": form.get("user", ""),
+        "content": form.get("content", ""),
+        "subtasks": subtasks
+    })
+    return RedirectResponse(f"/tasks/{slug}", status_code=303)
+
+
+@app.get("/tasks/{slug}", response_class=HTMLResponse)
+def view_task(request: Request, slug: str, v: int | None = None):
+    task = tasks_mgr.read(slug)
+    if not task:
+        raise HTTPException(404)
+        
+    if v is not None:
+        version = tasks_mgr.read_version(slug, v)
+        if not version:
+            raise HTTPException(404)
+        is_latest = (version.version == task.latest.version)
+    else:
+        version = task.latest
+        is_latest = True
+        
+    return templates.TemplateResponse(request, "task_detail.html", {
+        "task": task,
+        "version": version,
+        "is_latest": is_latest
+    })
+
+
+@app.get("/tasks/{slug}/edit", response_class=HTMLResponse)
+def edit_task_form(request: Request, slug: str):
+    task = tasks_mgr.read(slug)
+    if not task:
+        raise HTTPException(404)
+    return templates.TemplateResponse(request, "task_edit.html", {"task": task})
+
+
+@app.post("/tasks/{slug}/edit")
+async def edit_task(request: Request, slug: str):
+    form = await request.form()
+    
+    subtasks = []
+    st_keys = [k for k in form.keys() if k.startswith("st_title_")]
+    for k in st_keys:
+        idx = k.replace("st_title_", "")
+        t = form.get(f"st_title_{idx}", "").strip()
+        s = form.get(f"st_status_{idx}", "to-do")
+        if t:
+            subtasks.append({"title": t, "status": s})
+        
+    tasks_mgr.update(slug, {
+        "title": form.get("title", ""),
+        "user": form.get("user", ""),
+        "content": form.get("content", ""),
+        "subtasks": subtasks
+    })
+    return RedirectResponse(f"/tasks/{slug}", status_code=303)
+
+
+@app.post("/tasks/{slug}/delete")
+def delete_task(slug: str):
+    if not tasks_mgr.delete(slug):
+        raise HTTPException(404)
+    return RedirectResponse("/tasks", status_code=303)
+
+
+@app.post("/tasks/{slug}/v/{version}/delete")
+def delete_task_version(slug: str, version: int):
+    if not tasks_mgr.delete_version(slug, version):
+        raise HTTPException(404)
+    if not tasks_mgr.read(slug):
+        return RedirectResponse("/tasks", status_code=303)
+    return RedirectResponse(f"/tasks/{slug}", status_code=303)
 
 
 # --------------------------------------------------------------------------- #

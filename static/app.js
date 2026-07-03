@@ -14,6 +14,7 @@ var FEATURE_LIST = [
   { app: "notes",     label: "Notes",     desc: "Quick pinnable notes" },
   { app: "api-docs",  label: "API Docs",  desc: "REST API reference" },
   { app: "bookmarks", label: "Bookmarks", desc: "Saved links" },
+  { app: "tasks",     label: "Tasks",     desc: "Versioned tasks" },
 ];
 
 var APP_ICONS_DEFAULT = {
@@ -25,11 +26,12 @@ var APP_ICONS_DEFAULT = {
   "notes":     "🗒️",
   "api-docs":  "📄",
   "bookmarks": "🔖",
+  "tasks":     "✅",
 };
 var APP_LABELS = {
   "posts": "Posts", "series": "Series", "books": "Books",
   "toeic": "TOEIC", "music": "Music", "notes": "Notes",
-  "api-docs": "API Docs", "bookmarks": "Bookmarks",
+  "api-docs": "API Docs", "bookmarks": "Bookmarks", "tasks": "Tasks",
 };
 
 (function () {

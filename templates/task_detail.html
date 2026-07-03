@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ version.title }} – Knowledge Base{% endblock %}
+
+{% block sidebar %}
+  <section class="facet">
+    <h2>Version History</h2>
+    <ul class="playlist-tracks">
+      <li class="{{ 'playing' if is_latest else '' }}">
+        <a href="/tasks/{{ task.slug }}">Latest (v{{ task.latest.version }})</a>
+        <div class="muted" style="font-size:0.8rem; margin-top:0.2rem;">Updated {{ task.latest.updated[:10] }} by {{ task.latest.user }}</div>
+      </li>
+      {% for hist in task.history %}
+      <li class="{{ 'playing' if not is_latest and version.version == hist.version else '' }}">
+        <a href="/tasks/{{ task.slug }}?v={{ hist.version }}">v{{ hist.version }} ({{ hist.date_str }})</a>
+        <div class="muted" style="font-size:0.8rem; margin-top:0.2rem;">by {{ hist.user }}</div>
+        
+        <form method="post" action="/tasks/{{ task.slug }}/v/{{ hist.version }}/delete"
+              style="margin-top: .5rem;"
+              onsubmit="return confirm('Clean this specific historical version? This cannot be undone.')">
+          <button type="submit" class="btn btn-sm btn-danger">Clean</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <div style="flex:1">
+      <h1 style="margin-bottom:0">{{ version.title }} {% if not is_latest %}<span class="badge" style="background:#ff4d4f;color:#fff;font-size:0.8rem;padding:2px 6px;border-radius:4px;vertical-align:middle;">Historical Version</span>{% endif %}</h1>
+      <div class="muted" style="margin-top:.5rem;">
+        v{{ version.version }} · Updated {{ version.updated[:10] }} by <strong>{{ version.user }}</strong>
+        <br>
+        File: <code>{{ version.filename }}</code>
+      </div>
+    </div>
+    {% if is_latest %}
+    <a class="btn btn-primary head-action" href="/tasks/{{ task.slug }}/edit">Edit Task</a>
+    {% endif %}
+  </div>
+
+  <div class="meta-card" style="margin-top: 1rem;">
+    <h3>Subtasks</h3>
+    {% if not version.subtasks %}
+      <p class="muted">No subtasks defined.</p>
+    {% else %}
+      <ul style="list-style: none; padding: 0; margin: 0;">
+        {% for st in version.subtasks %}
+          <li style="padding: .5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .5rem;">
+            {% if st.status == 'done' %}
+              <span style="color: #4CAF50; font-size: 1.2rem;">✅</span>
+            {% elif st.status == 'in-progress' %}
+              <span style="color: #FFC107; font-size: 1.2rem;">⏳</span>
+            {% else %}
+              <span style="color: var(--text-muted); font-size: 1.2rem;">⬜</span>
+            {% endif %}
+            
+            <span style="{{ 'text-decoration: line-through; color: var(--text-muted);' if st.status == 'done' else '' }}">
+              {{ st.title }}
+            </span>
+            
+            <span class="badge" style="margin-left: auto; font-size: .75rem; background: var(--bg-alt); padding: 2px 6px; border-radius: 4px;">
+              {{ st.status }}
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <div class="note-content markdown" style="margin-top: 1rem;">
+    {% if version.content %}
+      {{ version.content | markdown | safe }}
+    {% else %}
+      <p class="muted">No additional description.</p>
+    {% endif %}
+  </div>
+
+{% endblock %}

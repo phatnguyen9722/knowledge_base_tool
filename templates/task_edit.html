@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Task' if task else 'New Task' }} – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>{{ 'Edit Task' if task else 'New Task' }}</h1>
+    <a class="btn" href="/tasks{{ '/' ~ task.slug if task else '' }}">Cancel</a>
+  </div>
+
+  <form method="post" action="/tasks/{{ task.slug ~ '/edit' if task else 'new' }}" class="editor-layout">
+    <div class="editor-main">
+      <div class="meta-card">
+        <label>
+          <strong>Task Title</strong>
+          <input type="text" name="title" value="{{ task.latest.title if task else '' }}"
+                 required placeholder="e.g. Build new feature...">
+        </label>
+        
+        <label>
+          <strong>User Name</strong>
+          <input type="text" name="user" value="{{ task.latest.user if task else '' }}"
+                 required placeholder="Your name...">
+        </label>
+      </div>
+
+      <div class="meta-card">
+        <h3>Subtasks</h3>
+        <table class="subtasks-table" id="subtasks-table" style="width:100%; border-collapse: collapse; margin-bottom: 1rem;">
+          <thead>
+            <tr>
+              <th style="text-align:left; padding-bottom:.5rem;">Title</th>
+              <th style="text-align:left; padding-bottom:.5rem; width:120px;">Status</th>
+              <th style="width:40px;"></th>
+            </tr>
+          </thead>
+          <tbody id="subtasks-body">
+            {% if task and task.latest.subtasks %}
+              {% for st in task.latest.subtasks %}
+              <tr class="subtask-row">
+                <td style="padding:.2rem 0;"><input type="text" name="st_title_{{ loop.index0 }}" value="{{ st.title }}" style="width:100%;" required></td>
+                <td style="padding:.2rem .5rem;">
+                  <select name="st_status_{{ loop.index0 }}" style="width:100%;">
+                    <option value="to-do" {% if st.status == 'to-do' %}selected{% endif %}>To Do</option>
+                    <option value="in-progress" {% if st.status == 'in-progress' %}selected{% endif %}>In Progress</option>
+                    <option value="done" {% if st.status == 'done' %}selected{% endif %}>Done</option>
+                  </select>
+                </td>
+                <td style="padding:.2rem 0; text-align:right;">
+                  <button type="button" class="btn btn-sm btn-danger remove-st" title="Remove">✕</button>
+                </td>
+              </tr>
+              {% endfor %}
+            {% endif %}
+          </tbody>
+        </table>
+        <button type="button" class="btn btn-sm" id="add-subtask">+ Add Subtask</button>
+      </div>
+
+      <div class="meta-card">
+        <label>
+          <strong>Description (Markdown)</strong>
+          <textarea name="content" rows="10" placeholder="Optional details...">{{ task.latest.content if task else '' }}</textarea>
+        </label>
+      </div>
+
+      <div style="margin-top: 1rem;">
+        <button type="submit" class="btn btn-primary">Save Task</button>
+      </div>
+    </div>
+  </form>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const tbody = document.getElementById("subtasks-body");
+      const addBtn = document.getElementById("add-subtask");
+      let stCount = tbody.querySelectorAll("tr").length;
+
+      addBtn.addEventListener("click", function() {
+        const tr = document.createElement("tr");
+        tr.className = "subtask-row";
+        tr.innerHTML = `
+          <td style="padding:.2rem 0;"><input type="text" name="st_title_${stCount}" placeholder="Subtask..." style="width:100%;" required></td>
+          <td style="padding:.2rem .5rem;">
+            <select name="st_status_${stCount}" style="width:100%;">
+              <option value="to-do">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </td>
+          <td style="padding:.2rem 0; text-align:right;">
+            <button type="button" class="btn btn-sm btn-danger remove-st" title="Remove">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+        stCount++;
+      });
+
+      tbody.addEventListener("click", function(e) {
+        if (e.target.closest(".remove-st")) {
+          e.target.closest("tr").remove();
+        }
+      });
+    });
+  </script>
+{% endblock %}
