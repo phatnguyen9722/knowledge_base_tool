@@ -47,20 +47,27 @@
     {% else %}
       <ul style="list-style: none; padding: 0; margin: 0;">
         {% for st in version.subtasks %}
-          <li style="padding: .5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: .5rem;">
+          <li style="padding: .8rem .5rem; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: .8rem;">
             {% if st.status == 'done' %}
-              <span style="color: #4CAF50; font-size: 1.2rem;">✅</span>
+              <span style="color: #4CAF50; font-size: 1.2rem; margin-top: .1rem;">✅</span>
             {% elif st.status == 'in-progress' %}
-              <span style="color: #FFC107; font-size: 1.2rem;">⏳</span>
+              <span style="color: #FFC107; font-size: 1.2rem; margin-top: .1rem;">⏳</span>
             {% else %}
-              <span style="color: var(--text-muted); font-size: 1.2rem;">⬜</span>
+              <span style="color: var(--text-muted); font-size: 1.2rem; margin-top: .1rem;">⬜</span>
             {% endif %}
             
-            <span style="{{ 'text-decoration: line-through; color: var(--text-muted);' if st.status == 'done' else '' }}">
-              {{ st.title }}
-            </span>
+            <div style="flex: 1;">
+              <div style="{{ 'text-decoration: line-through; color: var(--text-muted);' if st.status == 'done' else 'font-weight: 500;' }}">
+                {{ st.title }}
+              </div>
+              {% if st.notes %}
+                <div class="muted" style="font-size: .85rem; margin-top: .3rem;">
+                  ↳ {{ st.notes }}
+                </div>
+              {% endif %}
+            </div>
             
-            <span class="badge" style="margin-left: auto; font-size: .75rem; background: var(--bg-alt); padding: 2px 6px; border-radius: 4px;">
+            <span class="badge" style="font-size: .75rem; background: var(--bg-alt); padding: 2px 6px; border-radius: 4px;">
               {{ st.status }}
             </span>
           </li>

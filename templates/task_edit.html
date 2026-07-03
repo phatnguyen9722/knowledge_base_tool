@@ -36,16 +36,19 @@
           <tbody id="subtasks-body">
             {% if task and task.latest.subtasks %}
               {% for st in task.latest.subtasks %}
-              <tr class="subtask-row">
-                <td style="padding:.2rem 0;"><input type="text" name="st_title_{{ loop.index0 }}" value="{{ st.title }}" style="width:100%;" required></td>
-                <td style="padding:.2rem .5rem;">
+              <tr class="subtask-row" style="border-bottom:1px solid var(--border);">
+                <td style="padding:.5rem 0;">
+                  <input type="text" name="st_title_{{ loop.index0 }}" value="{{ st.title }}" style="width:100%; margin-bottom:.4rem;" required placeholder="Subtask title">
+                  <input type="text" name="st_notes_{{ loop.index0 }}" value="{{ st.notes }}" style="width:100%; font-size:.85rem;" placeholder="Current details or notes...">
+                </td>
+                <td style="padding:.5rem .5rem; vertical-align:top;">
                   <select name="st_status_{{ loop.index0 }}" style="width:100%;">
                     <option value="to-do" {% if st.status == 'to-do' %}selected{% endif %}>To Do</option>
                     <option value="in-progress" {% if st.status == 'in-progress' %}selected{% endif %}>In Progress</option>
                     <option value="done" {% if st.status == 'done' %}selected{% endif %}>Done</option>
                   </select>
                 </td>
-                <td style="padding:.2rem 0; text-align:right;">
+                <td style="padding:.5rem 0; text-align:right; vertical-align:top;">
                   <button type="button" class="btn btn-sm btn-danger remove-st" title="Remove">✕</button>
                 </td>
               </tr>
@@ -78,16 +81,20 @@
       addBtn.addEventListener("click", function() {
         const tr = document.createElement("tr");
         tr.className = "subtask-row";
+        tr.style.borderBottom = "1px solid var(--border)";
         tr.innerHTML = `
-          <td style="padding:.2rem 0;"><input type="text" name="st_title_${stCount}" placeholder="Subtask..." style="width:100%;" required></td>
-          <td style="padding:.2rem .5rem;">
+          <td style="padding:.5rem 0;">
+            <input type="text" name="st_title_${stCount}" placeholder="Subtask title" style="width:100%; margin-bottom:.4rem;" required>
+            <input type="text" name="st_notes_${stCount}" placeholder="Current details or notes..." style="width:100%; font-size:.85rem;">
+          </td>
+          <td style="padding:.5rem .5rem; vertical-align:top;">
             <select name="st_status_${stCount}" style="width:100%;">
               <option value="to-do">To Do</option>
               <option value="in-progress">In Progress</option>
               <option value="done">Done</option>
             </select>
           </td>
-          <td style="padding:.2rem 0; text-align:right;">
+          <td style="padding:.5rem 0; text-align:right; vertical-align:top;">
             <button type="button" class="btn btn-sm btn-danger remove-st" title="Remove">✕</button>
           </td>
         `;

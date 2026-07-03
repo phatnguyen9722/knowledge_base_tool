@@ -32,7 +32,7 @@
     {% for t in tasks %}
     {% set done = t.latest.subtasks | selectattr('status', 'equalto', 'done') | list | length %}
     {% set total = t.latest.subtasks | length %}
-    <article class="note-box note-theme-plain">
+    <article class="note-box task-card">
       <a class="note-open" href="/tasks/{{ t.slug }}" aria-label="Open {{ t.title }}"></a>
       <div class="note-box-head">
         <h2 class="note-title">{{ t.title }}</h2>

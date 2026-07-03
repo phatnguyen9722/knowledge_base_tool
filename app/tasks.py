@@ -22,9 +22,10 @@ __all__ = ["SubTask", "TaskVersion", "Task", "TaskManager"]
 class SubTask:
     title: str
     status: str  # "to-do", "in-progress", "done"
+    notes: str = ""
 
     def to_dict(self):
-        return {"title": self.title, "status": self.status}
+        return {"title": self.title, "status": self.status, "notes": self.notes}
 
 
 @dataclass
@@ -114,7 +115,8 @@ class TaskManager:
             if isinstance(st, dict):
                 subtasks.append(SubTask(
                     title=str(st.get("title", "")),
-                    status=str(st.get("status", "to-do"))
+                    status=str(st.get("status", "to-do")),
+                    notes=str(st.get("notes", ""))
                 ))
         
         return TaskVersion(
@@ -151,7 +153,11 @@ class TaskManager:
         subtasks_raw = data.get("subtasks", [])
         subtasks = []
         for st in subtasks_raw:
-            subtasks.append(SubTask(title=st.get("title", "").strip(), status=st.get("status", "to-do")))
+            subtasks.append(SubTask(
+                title=st.get("title", "").strip(), 
+                status=st.get("status", "to-do"),
+                notes=st.get("notes", "").strip()
+            ))
         
         tdir = self._task_dir(slug)
         filename = self._generate_filename(user, 0)
@@ -188,7 +194,11 @@ class TaskManager:
         if "subtasks" in data:
             subtasks = []
             for st in data["subtasks"]:
-                subtasks.append(SubTask(title=st.get("title", "").strip(), status=st.get("status", "to-do")))
+                subtasks.append(SubTask(
+                    title=st.get("title", "").strip(), 
+                    status=st.get("status", "to-do"),
+                    notes=st.get("notes", "").strip()
+                ))
         else:
             subtasks = latest.subtasks
             

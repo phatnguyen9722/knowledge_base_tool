@@ -945,8 +945,9 @@ async def create_task(request: Request):
         idx = k.replace("st_title_", "")
         t = form.get(f"st_title_{idx}", "").strip()
         s = form.get(f"st_status_{idx}", "to-do")
+        n = form.get(f"st_notes_{idx}", "").strip()
         if t:
-            subtasks.append({"title": t, "status": s})
+            subtasks.append({"title": t, "status": s, "notes": n})
             
     slug = tasks_mgr.create({
         "title": form.get("title", ""),
@@ -997,8 +998,9 @@ async def edit_task(request: Request, slug: str):
         idx = k.replace("st_title_", "")
         t = form.get(f"st_title_{idx}", "").strip()
         s = form.get(f"st_status_{idx}", "to-do")
+        n = form.get(f"st_notes_{idx}", "").strip()
         if t:
-            subtasks.append({"title": t, "status": s})
+            subtasks.append({"title": t, "status": s, "notes": n})
         
     tasks_mgr.update(slug, {
         "title": form.get("title", ""),

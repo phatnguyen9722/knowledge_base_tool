@@ -599,6 +599,8 @@ tr.required { background: rgba(220,38,38,.04); }
 }
 .code-block:hover .copy-btn,
 .code-block .copy-btn:focus { opacity: 1; }
+.code-block:hover .copy-btn:hover { background: var(--border); color: var(--text); }
+.code-block .copy-btn.copied { background: #16a34a; color: #fff; border-color: #16a34a; opacity: 1; }
 .copy-btn:hover { color: var(--fg); border-color: var(--accent); }
 .copy-btn.copied {
   opacity: 1; color: var(--accent-fg);
@@ -968,4 +970,46 @@ body::before {
 .bg-gallery-title {
   font-size: .78rem; font-weight: 600; text-transform: uppercase;
   letter-spacing: .06em; color: var(--muted); margin: .5rem 0 .4rem;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Tasks App Aesthetics */
+/* ------------------------------------------------------------------------- */
+.task-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--border);
+}
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.task-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.task-progress .progress-bar {
+  background: var(--bg-alt);
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  display: flex;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+.task-progress .progress-bar > div {
+  transition: width 0.5s ease-out;
+}
+.subtask-row td {
+  border-bottom: 1px solid var(--border);
+}
+.subtask-row:last-child td {
+  border-bottom: none;
+}
+.subtask-row input[type="text"]:focus, .subtask-row select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
