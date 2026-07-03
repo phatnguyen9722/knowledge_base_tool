@@ -803,6 +803,49 @@ async def notes_index(
     )
 
 
+@app.get("/notes/export")
+async def notes_export():
+    import io
+    import zipfile
+    from fastapi.responses import StreamingResponse
+    
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED, False) as zip_file:
+        for f in NOTES_DIR.glob("*.md"):
+            zip_file.writestr(f.name, f.read_text(encoding="utf-8"))
+            
+    zip_buffer.seek(0)
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=notes_export.zip"}
+    )
+
+
+@app.post("/notes/import")
+async def notes_import(file: UploadFile = File(...)):
+    import io
+    import zipfile
+    
+    if not file.filename.endswith(".zip"):
+        raise HTTPException(400, "Only ZIP files are supported.")
+        
+    content = await file.read()
+    zip_buffer = io.BytesIO(content)
+    
+    try:
+        with zipfile.ZipFile(zip_buffer, "r") as zip_file:
+            for name in zip_file.namelist():
+                if name.endswith(".md"):
+                    file_content = zip_file.read(name)
+                    safe_name = Path(name).name
+                    (NOTES_DIR / safe_name).write_bytes(file_content)
+    except Exception as e:
+        raise HTTPException(400, f"Failed to extract zip: {e}")
+        
+    return RedirectResponse("/notes", status_code=303)
+
+
 @app.get("/notes/new", response_class=HTMLResponse)
 async def note_new_form(request: Request):
     return templates.TemplateResponse(

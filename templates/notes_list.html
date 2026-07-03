@@ -23,6 +23,21 @@
       {% endfor %}
     </div>
   </section>
+
+  <section class="facet">
+    <h2>Manage</h2>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
+      <a class="btn" href="/notes/export" style="text-align: center; justify-content: center; display: flex; align-items: center; gap: 0.4rem; width: 100%; box-sizing: border-box;">
+        📥 Export ZIP
+      </a>
+      <button class="btn" onclick="document.getElementById('import-file-input').click()" style="text-align: center; justify-content: center; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; width: 100%; box-sizing: border-box; background: transparent; border: 1px solid var(--border); color: var(--text);">
+        📤 Import ZIP
+      </button>
+      <form id="import-form" action="/notes/import" method="post" enctype="multipart/form-data" style="display: none;">
+        <input type="file" id="import-file-input" name="file" accept=".zip" onchange="document.getElementById('import-form').submit()">
+      </form>
+    </div>
+  </section>
 {% endblock %}
 
 {% block content %}
