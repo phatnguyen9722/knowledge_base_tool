@@ -33,6 +33,7 @@ class Settings:
     tasks_dir: Path
     api_docs_dir: Path
     bookmarks_dir: Path
+    emails_dir: Path
     db_path: Path
     templates: Path
     static: Path
@@ -65,6 +66,7 @@ def load_settings(base: Path | None = None) -> Settings:
     tasks_dir = base / data.get("tasks_dir", "tasks")
     api_docs_dir = base / data.get("api_docs_dir", "api-docs")
     bookmarks_dir = base / data.get("bookmarks_dir", "bookmarks")
+    emails_dir = base / data.get("emails_dir", "emails")
     return Settings(
         base=base,
         posts_dir=posts_dir,
@@ -76,6 +78,7 @@ def load_settings(base: Path | None = None) -> Settings:
         tasks_dir=tasks_dir,
         api_docs_dir=api_docs_dir,
         bookmarks_dir=bookmarks_dir,
+        emails_dir=emails_dir,
         db_path=base / data.get("db_path", ".kb/search.db"),
         templates=base / "templates",
         static=base / "static",

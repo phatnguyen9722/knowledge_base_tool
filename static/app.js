@@ -15,6 +15,7 @@ var FEATURE_LIST = [
   { app: "api-docs",  label: "API Docs",  desc: "REST API reference" },
   { app: "bookmarks", label: "Bookmarks", desc: "Saved links" },
   { app: "tasks",     label: "Tasks",     desc: "Versioned tasks" },
+  { app: "emails",    label: "Email",     desc: "Email templates & composer" },
 ];
 
 var APP_ICONS_DEFAULT = {
@@ -27,11 +28,13 @@ var APP_ICONS_DEFAULT = {
   "api-docs":  "📄",
   "bookmarks": "🔖",
   "tasks":     "✅",
+  "emails":    "✉️",
 };
 var APP_LABELS = {
   "posts": "Posts", "series": "Series", "books": "Books",
   "toeic": "TOEIC", "music": "Music", "notes": "Notes",
   "api-docs": "API Docs", "bookmarks": "Bookmarks", "tasks": "Tasks",
+  "emails": "Email",
 };
 
 (function () {

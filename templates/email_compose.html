@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+{% block title %}Compose Email – {{ template.title }}{% endblock %}
+
+{% block content %}
+<div class="composer-container" style="display: flex; flex-direction: column; height: calc(100vh - 120px); min-height: 550px;">
+  <!-- Header -->
+  <div class="feed-head" style="margin-bottom: 1rem; flex-shrink: 0; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <a class="back" href="/emails" style="text-decoration: none; font-size: 1.25rem;">←</a>
+      <div>
+        <h1 style="margin: 0; font-size: 1.5rem;">{{ template.title }}</h1>
+        <p class="muted" style="margin: 0.2rem 0 0 0; font-size: 0.85rem;">{{ template.description or 'Fill variables below to compose your email' }}</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      {% if not template.builtin %}
+      <a class="btn" href="/emails/{{ template.slug }}/edit">Edit Template</a>
+      {% endif %}
+      <a class="btn" href="/emails">Back to Templates</a>
+    </div>
+  </div>
+
+  <!-- Layout: 2 Columns -->
+  <div style="display: flex; flex: 1; gap: 1.5rem; min-height: 0;">
+    
+    <!-- LEFT: Form variables -->
+    <div style="flex: 1; overflow-y: auto; padding-right: 0.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+      <div class="task-card" style="margin: 0; padding: 1.25rem;">
+        <h2 style="font-size: 1rem; margin-top: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; text-transform: uppercase; font-weight: 700; color: var(--accent); letter-spacing: 0.5px;">
+          📋 Fill Variables
+        </h2>
+        
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div>
+            <label class="muted" style="display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.35rem;">
+              Recipient Email (Optional)
+            </label>
+            <input type="email" id="input-recipient" placeholder="recipient@example.com" style="width: 100%; box-sizing: border-box;">
+          </div>
+
+          {% if template.all_variables %}
+            {% for var in template.all_variables %}
+            <div>
+              <label class="muted" style="display: block; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.35rem;">
+                {{ var | replace('_', ' ') | title }} (<code>&lcub;&lcub;{{ var }}&rcub;&rcub;</code>)
+              </label>
+              {% if var in ['action_items', 'agenda', 'reason', 'specific_detail', 'value_prop', 'pain_point', 'resolution', 'content', 'body'] %}
+              <textarea class="var-input" data-var="{{ var }}" placeholder="Enter multi-line text…" rows="4" style="width: 100%; box-sizing: border-box; font-family: inherit; resize: vertical;"></textarea>
+              {% else %}
+              <input type="text" class="var-input" data-var="{{ var }}" placeholder="Enter {{ var }}…" style="width: 100%; box-sizing: border-box;">
+              {% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted" style="font-size: 0.88rem;">No variables found in this template. You can copy it as-is.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Email Preview client -->
+    <div style="flex: 1.2; display: flex; flex-direction: column; min-width: 0; gap: 1rem;">
+      <div style="flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+        
+        <!-- Email Client Header -->
+        <div style="background: var(--bg-alt); border-bottom: 1px solid var(--border); padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; flex-shrink: 0;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff5f56;"></span>
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e;"></span>
+            <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #27c93f;"></span>
+            <span class="muted" style="font-size: 0.78rem; font-weight: 600; margin-left: auto; text-transform: uppercase; letter-spacing: 0.5px;">Live Draft Preview</span>
+          </div>
+
+          <div style="display: flex; align-items: center; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 0.5rem; font-size: 0.88rem;">
+            <span class="muted" style="width: 70px; font-weight: 600;">To:</span>
+            <span id="preview-recipient" style="color: var(--text); font-family: monospace;">[No recipient specified]</span>
+          </div>
+
+          <div style="display: flex; align-items: center; font-size: 0.88rem;">
+            <span class="muted" style="width: 70px; font-weight: 600;">Subject:</span>
+            <span id="preview-subject" style="color: var(--text); font-weight: 700; font-family: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+          </div>
+        </div>
+
+        <!-- Email Client Content -->
+        <div style="flex: 1; overflow-y: auto; padding: 1.5rem; background: #ffffff; color: #2d3748; line-height: 1.6; font-size: 0.98rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+          <div id="preview-body" class="markdown" style="all: unset;">
+            <!-- Rendered markdown goes here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div style="display: flex; gap: 0.75rem; flex-shrink: 0;">
+        <button class="btn btn-ghost" id="btn-copy-subject" style="flex: 1; justify-content: center; font-weight: 600;">
+          📋 Copy Subject
+        </button>
+        <button class="btn btn-ghost" id="btn-copy-body" style="flex: 1; justify-content: center; font-weight: 600;">
+          📋 Copy Body
+        </button>
+        <button class="btn btn-primary" id="btn-open-mail" style="flex: 1.5; justify-content: center; font-weight: 700;">
+          🚀 Open in Mail Client
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Raw template data for javascript -->
+<script type="application/json" id="template-subject-data">{{ template.subject | tojson }}</script>
+<script type="application/json" id="template-body-data">{{ template.content | tojson }}</script>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  // Get raw template strings
+  const templateSubject = JSON.parse(document.getElementById('template-subject-data').textContent);
+  const templateBody = JSON.parse(document.getElementById('template-body-data').textContent);
+
+  // Select DOM elements
+  const recipientInput = document.getElementById('input-recipient');
+  const previewRecipient = document.getElementById('preview-recipient');
+  const previewSubject = document.getElementById('preview-subject');
+  const previewBody = document.getElementById('preview-body');
+  const varInputs = document.querySelectorAll('.var-input');
+
+  const btnCopySubject = document.getElementById('btn-copy-subject');
+  const btnCopyBody = document.getElementById('btn-copy-body');
+  const btnOpenMail = document.getElementById('btn-open-mail');
+
+  // Track state of filled variables
+  const variables = {};
+  varInputs.forEach(input => {
+    variables[input.dataset.var] = '';
+    
+    // Add input event listeners to all variable inputs
+    input.addEventListener('input', (e) => {
+      variables[input.dataset.var] = e.target.value;
+      renderEmail();
+    });
+  });
+
+  // Recipient input listener
+  recipientInput.addEventListener('input', (e) => {
+    const value = e.target.value.trim();
+    previewRecipient.textContent = value || '[No recipient specified]';
+    previewRecipient.style.color = value ? 'var(--text)' : 'var(--text-muted)';
+  });
+
+  // Render email by substituting variables
+  function renderEmail() {
+    let subject = templateSubject;
+    let body = templateBody;
+
+    // Substitute placeholders like {{variable}}
+    Object.keys(variables).forEach(key => {
+      const val = variables[key];
+      // Regex to match {{key}} case-sensitively or case-insensitively
+      const placeholder = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      
+      // If variable value is provided, use it. Otherwise, show a highlighted placeholder
+      if (val.trim() !== '') {
+        subject = subject.replace(placeholder, val);
+        body = body.replace(placeholder, val);
+      } else {
+        subject = subject.replace(placeholder, `[${key.replace('_', ' ').toUpperCase()}]`);
+        body = body.replace(placeholder, `**[${key.replace('_', ' ').toUpperCase()}]**`);
+      }
+    });
+
+    // Update subject preview
+    previewSubject.textContent = subject;
+
+    // Update body preview (render as Markdown, sanitized output inside email body wrapper)
+    previewBody.innerHTML = marked.parse(body);
+    
+    // Make sure links in preview open in new tab
+    previewBody.querySelectorAll('a').forEach(link => {
+      link.setAttribute('target', '_blank');
+      link.style.color = '#3182ce';
+      link.style.textDecoration = 'underline';
+    });
+  }
+
+  // Get raw text representation of rendered body
+  function getRenderedText() {
+    let body = templateBody;
+    Object.keys(variables).forEach(key => {
+      const val = variables[key];
+      const placeholder = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      body = body.replace(placeholder, val || `[${key.toUpperCase()}]`);
+    });
+    return body;
+  }
+
+  function getRenderedSubject() {
+    let subject = templateSubject;
+    Object.keys(variables).forEach(key => {
+      const val = variables[key];
+      const placeholder = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+      subject = subject.replace(placeholder, val || `[${key.toUpperCase()}]`);
+    });
+    return subject;
+  }
+
+  // Action: Copy Subject
+  btnCopySubject.addEventListener('click', () => {
+    const text = getRenderedSubject();
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btnCopySubject.textContent;
+      btnCopySubject.textContent = '✅ Copied!';
+      btnCopySubject.style.borderColor = '#4caf50';
+      setTimeout(() => {
+        btnCopySubject.textContent = originalText;
+        btnCopySubject.style.borderColor = '';
+      }, 1500);
+    });
+  });
+
+  // Action: Copy Body
+  btnCopyBody.addEventListener('click', () => {
+    const text = getRenderedText();
+    navigator.clipboard.writeText(text).then(() => {
+      const originalText = btnCopyBody.textContent;
+      btnCopyBody.textContent = '✅ Copied!';
+      btnCopyBody.style.borderColor = '#4caf50';
+      setTimeout(() => {
+        btnCopyBody.textContent = originalText;
+        btnCopyBody.style.borderColor = '';
+      }, 1500);
+    });
+  });
+
+  // Action: Open in Mail client (mailto link)
+  btnOpenMail.addEventListener('click', () => {
+    const recipient = recipientInput.value.trim();
+    const subject = getRenderedSubject();
+    const body = getRenderedText();
+    
+    // Create mailto link
+    const mailto = `mailto:${encodeURIComponent(recipient)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+  });
+
+  // Initial render
+  renderEmail();
+</script>
+{% endblock %}

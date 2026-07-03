@@ -22,6 +22,7 @@ from .api_docs import ApiDocsManager
 from .bookmarks import BookmarksManager
 from .books import BookManager
 from .config import load_settings
+from .emails import EmailManager
 from .markdown import render_with_toc
 from .music import MusicManager
 from .notes import NOTE_THEMES, NoteManager
@@ -43,6 +44,7 @@ NOTES_DIR = _settings.notes_dir
 API_DOCS_DIR = _settings.api_docs_dir
 BOOKMARKS_DIR = _settings.bookmarks_dir
 TASKS_DIR = _settings.tasks_dir
+EMAILS_DIR = _settings.emails_dir
 DB_PATH = _settings.db_path
 TEMPLATES = _settings.templates
 STATIC = _settings.static
@@ -120,6 +122,7 @@ notes = NoteManager(NOTES_DIR)
 api_docs = ApiDocsManager(API_DOCS_DIR)
 bmarks = BookmarksManager(BOOKMARKS_DIR)
 tasks_mgr = TaskManager(TASKS_DIR)
+email_mgr = EmailManager(EMAILS_DIR)
 
 
 def _parse_tags(raw: str) -> list[str]:
@@ -186,6 +189,9 @@ async def home(request: Request):
         {"icon": "✅", "app": "tasks", "title": "Tasks", "href": "/tasks",
          "desc": "Task tracking with subtasks and version history.",
          "count": len(tasks_mgr.list())},
+        {"icon": "✉️", "app": "emails", "title": "Email Composers", "href": "/emails",
+         "desc": "Template-based email drafting and composing.",
+         "count": len(email_mgr.list())},
     ]
     return templates.TemplateResponse(request, "home.html", {"features": features})
 
@@ -529,6 +535,108 @@ async def book_chapter_read(request: Request, coll: str, chapter: str):
             "next": members[idx + 1] if idx < len(members) - 1 else None,
         },
     )
+
+
+
+# --------------------------------------------------------------------------- #
+# Email Composers
+# --------------------------------------------------------------------------- #
+@app.get("/emails", response_class=HTMLResponse)
+async def emails_index(request: Request, q: str = "", category: str = ""):
+    templates_list = email_mgr.list(q=q, category=category)
+    categories = email_mgr.categories()
+    return templates.TemplateResponse(
+        request,
+        "emails_list.html",
+        {
+            "templates": templates_list,
+            "categories": categories,
+            "q": q,
+            "selected_category": category,
+        },
+    )
+
+
+@app.get("/emails/new", response_class=HTMLResponse)
+async def email_new_form(request: Request):
+    return templates.TemplateResponse(request, "email_edit.html", {"template": None})
+
+
+@app.post("/emails/new")
+async def email_create(
+    title: str = Form(...),
+    subject: str = Form(...),
+    category: str = Form("general"),
+    description: str = Form(""),
+    content: str = Form(""),
+):
+    slug = email_mgr.create(
+        {
+            "title": title,
+            "subject": subject,
+            "category": category,
+            "description": description,
+            "content": content,
+        }
+    )
+    return RedirectResponse(f"/emails/{slug}", status_code=303)
+
+
+@app.get("/emails/{slug}", response_class=HTMLResponse)
+async def email_detail(request: Request, slug: str):
+    tpl = email_mgr.read(slug)
+    if not tpl:
+        raise HTTPException(404, "Email template not found")
+    return templates.TemplateResponse(request, "email_compose.html", {"template": tpl})
+
+
+@app.get("/emails/{slug}/edit", response_class=HTMLResponse)
+async def email_edit_form(request: Request, slug: str):
+    tpl = email_mgr.read(slug)
+    if not tpl:
+        raise HTTPException(404, "Email template not found")
+    if tpl.builtin:
+        raise HTTPException(400, "Built-in templates cannot be edited")
+    return templates.TemplateResponse(request, "email_edit.html", {"template": tpl})
+
+
+@app.post("/emails/{slug}/edit")
+async def email_update(
+    slug: str,
+    title: str = Form(...),
+    subject: str = Form(...),
+    category: str = Form("general"),
+    description: str = Form(""),
+    content: str = Form(""),
+):
+    tpl = email_mgr.read(slug)
+    if not tpl:
+        raise HTTPException(404, "Email template not found")
+    if tpl.builtin:
+        raise HTTPException(400, "Built-in templates cannot be edited")
+    
+    email_mgr.update(
+        slug,
+        {
+            "title": title,
+            "subject": subject,
+            "category": category,
+            "description": description,
+            "content": content,
+        }
+    )
+    return RedirectResponse(f"/emails/{slug}", status_code=303)
+
+
+@app.post("/emails/{slug}/delete")
+async def email_delete(slug: str):
+    tpl = email_mgr.read(slug)
+    if not tpl:
+        raise HTTPException(404, "Email template not found")
+    if tpl.builtin:
+        raise HTTPException(400, "Built-in templates cannot be deleted")
+    email_mgr.delete(slug)
+    return RedirectResponse("/emails", status_code=303)
 
 
 

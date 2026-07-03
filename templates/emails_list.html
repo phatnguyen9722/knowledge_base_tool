@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Email Composers – Knowledge Base{% endblock %}
+
+{% block sidebar %}
+  <section class="facet">
+    <h2>Search</h2>
+    <form class="notes-search" action="/emails" method="get" role="search">
+      {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+      <input type="search" name="q" value="{{ q }}" placeholder="Search templates…"
+             autocomplete="off">
+    </form>
+  </section>
+
+  <section class="facet">
+    <h2>Categories</h2>
+    {% if selected_category or q %}<a class="clear" href="/emails">✕ clear filters</a>{% endif %}
+    <div class="category-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem;">
+      <a href="/emails{% if q %}?q={{ q|urlencode }}{% endif %}" 
+         class="category-item {% if not selected_category %}active{% endif %}"
+         style="text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; color: var(--text); display: flex; justify-content: space-between; {% if not selected_category %}background: var(--bg-alt); font-weight: 600; color: var(--accent);{% endif %}">
+        <span>All Categories</span>
+      </a>
+      {% for cat in categories %}
+      {% set cat_url = "/emails?category=" ~ cat|urlencode %}
+      {% if q %}{% set cat_url = cat_url ~ "&q=" ~ q|urlencode %}{% endif %}
+      <a href="{{ cat_url }}" 
+         class="category-item {% if selected_category == cat %}active{% endif %}"
+         style="text-decoration: none; padding: 0.4rem 0.75rem; border-radius: 6px; color: var(--text); display: flex; justify-content: space-between; {% if selected_category == cat %}background: var(--bg-alt); font-weight: 600; color: var(--accent);{% endif %}">
+        <span>{{ cat|title }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>✉️ Email Composers</h1>
+    <span class="muted">{{ templates|length }} template{{ '' if templates|length == 1 else 's' }}</span>
+    <a class="btn btn-primary head-action" href="/emails/new">+ New Template</a>
+  </div>
+
+  {% if q or selected_category %}
+  <p class="muted" style="margin-bottom: 1.5rem;">
+    Filtered{% if q %} by search “{{ q }}”{% endif %}{% if selected_category %} by category “{{ selected_category|title }}”{% endif %}
+    · <a href="/emails">reset</a>
+  </p>
+  {% endif %}
+
+  {% if not templates %}
+    <p class="muted empty">{% if q or selected_category %}No templates match your filters.{% else %}No templates found. Create one now!{% endif %}</p>
+  {% endif %}
+
+  <div class="task-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+    {% for t in templates %}
+    <article class="task-card" style="display: flex; flex-direction: column; justify-content: space-between; position: relative;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+          <span class="tag" style="background: var(--bg-alt); color: var(--text-muted); font-size: 0.75rem; font-weight: 600;">
+            {{ t.category_label }}
+          </span>
+          {% if t.builtin %}
+          <span class="tag" style="background: rgba(var(--accent-rgb, 92, 107, 192), 0.15); color: var(--accent); font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(var(--accent-rgb, 92, 107, 192), 0.3);">
+            Built-in
+          </span>
+          {% else %}
+          <span class="tag" style="background: rgba(76, 175, 80, 0.15); color: #4caf50; font-size: 0.72rem; font-weight: 600; border: 1px solid rgba(76, 175, 80, 0.3);">
+            Custom
+          </span>
+          {% endif %}
+        </div>
+
+        <h2 style="font-size: 1.2rem; margin: 0.4rem 0; font-weight: 700; color: var(--text);">{{ t.title }}</h2>
+        
+        {% if t.description %}
+        <p class="muted" style="font-size: 0.88rem; line-height: 1.4; margin: 0.5rem 0 1rem 0;">{{ t.description }}</p>
+        {% endif %}
+
+        <div style="background: var(--bg); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 1.25rem;">
+          <div class="muted" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; margin-bottom: 0.25rem; letter-spacing: 0.5px;">Subject Line</div>
+          <div style="font-size: 0.88rem; font-weight: 500; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text);">
+            {{ t.subject }}
+          </div>
+          {% if t.all_variables %}
+          <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.6rem;">
+            {% for var in t.all_variables %}
+            <span style="font-size: 0.72rem; font-family: monospace; background: var(--bg-alt); padding: 0.1rem 0.4rem; border-radius: 4px; color: var(--accent);">
+              {{ var }}
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border); padding-top: 1rem; margin-top: auto;">
+        <a class="btn btn-primary" href="/emails/{{ t.slug }}" style="flex: 1; text-align: center; justify-content: center;">
+          ✍️ Compose
+        </a>
+        {% if not t.builtin %}
+        <a class="btn" href="/emails/{{ t.slug }}/edit" title="Edit Template">Edit</a>
+        <form method="post" action="/emails/{{ t.slug }}/delete" style="display: inline;" onsubmit="return confirm('Delete template &ldquo;{{ t.title }}&rdquo;? This cannot be undone.')">
+          <button type="submit" class="btn btn-danger" title="Delete Template">✕</button>
+        </form>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+{% endblock %}
