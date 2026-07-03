@@ -10,6 +10,7 @@ import hashlib
 import mimetypes
 from datetime import date
 from math import ceil
+from pathlib import Path
 from urllib.parse import urlencode
 
 import mistune
@@ -842,6 +843,18 @@ async def notes_import(file: UploadFile = File(...)):
                     (NOTES_DIR / safe_name).write_bytes(file_content)
     except Exception as e:
         raise HTTPException(400, f"Failed to extract zip: {e}")
+        
+    return RedirectResponse("/notes", status_code=303)
+
+
+@app.post("/notes/import-md")
+async def notes_import_md(files: list[UploadFile] = File(...)):
+    for file in files:
+        if not file.filename.endswith(".md"):
+            continue
+        content = await file.read()
+        safe_name = Path(file.filename).name
+        (NOTES_DIR / safe_name).write_bytes(content)
         
     return RedirectResponse("/notes", status_code=303)
 

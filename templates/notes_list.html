@@ -36,6 +36,13 @@
       <form id="import-form" action="/notes/import" method="post" enctype="multipart/form-data" style="display: none;">
         <input type="file" id="import-file-input" name="file" accept=".zip" onchange="document.getElementById('import-form').submit()">
       </form>
+      
+      <button class="btn" onclick="document.getElementById('import-md-input').click()" style="text-align: center; justify-content: center; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; width: 100%; box-sizing: border-box; background: transparent; border: 1px solid var(--border); color: var(--text);">
+        📝 Import .MD
+      </button>
+      <form id="import-md-form" action="/notes/import-md" method="post" enctype="multipart/form-data" style="display: none;">
+        <input type="file" id="import-md-input" name="files" accept=".md" multiple onchange="document.getElementById('import-md-form').submit()">
+      </form>
     </div>
   </section>
 {% endblock %}

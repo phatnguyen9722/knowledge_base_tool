@@ -38,7 +38,7 @@ Below is the overview of all 10 major features available in the system:
 
 ### 6. 🗒️ Notes
 * **Main Function**: Quick-access, board-style sticky notes with backup tools.
-* **Short Description**: Simple grid layout for jotting down instant ideas. Notes can be tagged, pinned to the top of the feed, and rendered with custom background themes (plain, lines, dots, grid, sticky). Includes a **Manage** panel to **export all notes as a ZIP file** or **import notes from a ZIP archive**.
+* **Short Description**: Simple grid layout for jotting down instant ideas. Notes can be tagged, pinned to the top of the feed, and rendered with custom background themes (plain, lines, dots, grid, sticky). Includes a **Manage** panel to **export all notes as a ZIP file**, **import notes from a ZIP archive**, or **import individual/multiple .md files directly**.
 
 ### 7. 📄 API Docs
 * **Main Function**: REST API endpoint documentation.
