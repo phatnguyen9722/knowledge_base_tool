@@ -354,6 +354,7 @@ function initEditor() {
   const input = document.getElementById("md-input");
   const preview = document.getElementById("md-preview");
   if (!input || !preview || typeof marked === "undefined") return;
+  marked.setOptions({ breaks: true });
 
   const render = function () {
     preview.innerHTML = marked.parse(input.value || "");

@@ -22,7 +22,7 @@ from .config import load_settings
 from .post_manager import PostManager
 
 _md = mistune.create_markdown(
-    escape=False, plugins=["strikethrough", "table", "url", "task_lists"]
+    escape=False, hard_wrap=True, plugins=["strikethrough", "table", "url", "task_lists"]
 )
 
 _PAGE = """<!DOCTYPE html>

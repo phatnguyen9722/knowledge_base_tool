@@ -90,6 +90,7 @@ templates = Jinja2Templates(directory=str(TEMPLATES))
 # Server-side markdown rendering for the detail view (no JS needed to read).
 _md = mistune.create_markdown(
     escape=False,
+    hard_wrap=True,
     plugins=["strikethrough", "table", "url", "task_lists"],
 )
 templates.env.filters["markdown"] = lambda text: _md(text or "")

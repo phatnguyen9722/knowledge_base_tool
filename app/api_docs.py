@@ -48,7 +48,7 @@ from slugify import slugify
 __all__ = ["ApiParam", "ApiResponse", "ApiEndpoint", "ApiProject", "ApiDocsManager"]
 
 _md = mistune.create_markdown(
-    escape=False, plugins=["strikethrough", "table", "url", "task_lists"]
+    escape=False, hard_wrap=True, plugins=["strikethrough", "table", "url", "task_lists"]
 )
 
 _ENDPOINT_OPEN = re.compile(r"^:::\s*endpoint\b", re.IGNORECASE)

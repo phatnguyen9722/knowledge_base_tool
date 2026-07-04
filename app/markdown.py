@@ -51,6 +51,6 @@ class _TocRenderer(mistune.HTMLRenderer):
 def render_with_toc(text: str) -> tuple[str, list[dict]]:
     """Render markdown to (html, toc). `toc` is a list of {level, text, id}."""
     renderer = _TocRenderer()
-    md = mistune.create_markdown(renderer=renderer, plugins=_PLUGINS)
+    md = mistune.create_markdown(renderer=renderer, hard_wrap=True, plugins=_PLUGINS)
     html = md(text or "")
     return html, renderer.toc

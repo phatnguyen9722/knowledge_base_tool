@@ -46,7 +46,7 @@ __all__ = [
 ]
 
 _md = mistune.create_markdown(
-    escape=False, plugins=["strikethrough", "table", "url", "task_lists"]
+    escape=False, hard_wrap=True, plugins=["strikethrough", "table", "url", "task_lists"]
 )
 
 _OPEN_RE = re.compile(r"^:::\s*(question|passage)\b", re.IGNORECASE)
