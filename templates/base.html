@@ -90,7 +90,6 @@
         <div class="settings-sidebar-title">Settings</div>
         <button class="settings-nav-item active" data-panel="theme">🎨 Theme</button>
         <button class="settings-nav-item" data-panel="features">⚡ Features</button>
-        <button class="settings-nav-item" data-panel="header-apps">🔝 Header Apps</button>
         <button class="settings-nav-item" data-panel="app-icons">🖼 App Icons</button>
         <button class="settings-nav-item" data-panel="icon-library">📂 Icon Library</button>
         <button class="settings-nav-item" data-panel="background">🌄 Background</button>
@@ -132,12 +131,11 @@
           </div>
         </div>
 
-        <!-- Features panel -->
+        <!-- Features + Header Apps panel (merged, two-column) -->
         <div class="settings-panel" id="panel-features" hidden>
           <h3 class="settings-panel-title">Features</h3>
           <p class="muted settings-panel-desc">
-            Toggle sections on or off. Hidden sections disappear from the menu
-            and homepage but remain accessible by URL.
+            Toggle sections on/off and control which appear in the header bar.
           </p>
           <div class="features-search-wrap">
             <span class="features-search-icon">🔍</span>
@@ -146,31 +144,22 @@
                    autocomplete="off" aria-label="Search features">
             <button type="button" id="features-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
           </div>
-          <div class="panel-bulk-actions">
-            <button class="btn btn-sm" type="button" id="features-enable-all">Enable All</button>
-            <button class="btn btn-sm" type="button" id="features-disable-all">Disable All</button>
+          <!-- Column headers -->
+          <div class="features-col-header">
+            <span class="features-col-app">App</span>
+            <span class="features-col-lbl">Enabled</span>
+            <span class="features-col-lbl">In Header</span>
+          </div>
+          <div class="panel-bulk-actions features-bulk-row">
+            <span class="features-bulk-label">Enabled</span>
+            <button class="btn btn-sm" type="button" id="features-enable-all">All</button>
+            <button class="btn btn-sm" type="button" id="features-disable-all">None</button>
+            <span class="features-bulk-sep"></span>
+            <span class="features-bulk-label">In Header</span>
+            <button class="btn btn-sm" type="button" id="header-apps-enable-all">All</button>
+            <button class="btn btn-sm" type="button" id="header-apps-disable-all">None</button>
           </div>
           <div id="features-panel-list"></div>
-        </div>
-
-        <!-- Header Apps panel -->
-        <div class="settings-panel" id="panel-header-apps" hidden>
-          <h3 class="settings-panel-title">Header Apps</h3>
-          <p class="muted settings-panel-desc">
-            Toggle which applications appear in the top navigation bar.
-          </p>
-          <div class="features-search-wrap">
-            <span class="features-search-icon">🔍</span>
-            <input type="search" id="header-apps-search-input"
-                   placeholder="Search apps…"
-                   autocomplete="off" aria-label="Search header apps">
-            <button type="button" id="header-apps-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
-          </div>
-          <div class="panel-bulk-actions">
-            <button class="btn btn-sm" type="button" id="header-apps-enable-all">Enable All</button>
-            <button class="btn btn-sm" type="button" id="header-apps-disable-all">Disable All</button>
-          </div>
-          <div id="header-apps-panel-list"></div>
         </div>
 
         <!-- App Icons panel -->
