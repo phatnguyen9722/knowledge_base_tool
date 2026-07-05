@@ -220,7 +220,9 @@ a:hover { text-decoration: underline; }
 .post .back { font-size: .9rem; }
 .post-head h1 { margin: .5rem 0; }
 .post-meta { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; }
-.post-actions { margin: 1rem 0; display: flex; gap: .5rem; }
+.post-actions { margin: 1rem 0; display: flex; align-items: stretch; gap: .5rem; }
+.post-actions form { display: contents; }
+.post-actions .btn { display: flex; align-items: center; line-height: 1; }
 
 /* Detail page: article + right-hand TOC rail.
    align-items: stretch makes the rail as tall as the article, giving the
