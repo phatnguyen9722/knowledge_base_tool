@@ -56,16 +56,18 @@
       </form>
       <div id="search-results" class="search-results" hidden></div>
     </div>
-    <a class="btn" data-feature-app="posts"    data-header-app="posts"    href="/posts"><span class="app-icon" data-app="posts">📝</span> Posts</a>
-    <a class="btn" data-feature-app="bookmarks" data-header-app="bookmarks" href="/bookmarks"><span class="app-icon" data-app="bookmarks">🔖</span> Bookmarks</a>
-    <a class="btn" data-feature-app="tasks" data-header-app="tasks" href="/tasks"><span class="app-icon" data-app="tasks">✅</span> Tasks</a>
-    <a class="btn" data-feature-app="emails" data-header-app="emails" href="/emails"><span class="app-icon" data-app="emails">✉️</span> Email</a>
-    <a class="btn" data-feature-app="api-docs" data-header-app="api-docs" href="/api-docs"><span class="app-icon" data-app="api-docs">📄</span> API Docs</a>
-    <a class="btn" data-feature-app="notes"    data-header-app="notes"    href="/notes"><span class="app-icon" data-app="notes">🗒️</span> Notes</a>
-    <a class="btn" data-feature-app="books"    data-header-app="books"    href="/books"><span class="app-icon" data-app="books">📖</span> Books</a>
-    <a class="btn" data-feature-app="music"    data-header-app="music"    href="/music"><span class="app-icon" data-app="music">🎵</span> Music</a>
-    <a class="btn" data-feature-app="toeic"    data-header-app="toeic"    href="/toeic"><span class="app-icon" data-app="toeic">🎧</span> TOEIC</a>
-    <a class="btn" data-feature-app="series"   data-header-app="series"   href="/series"><span class="app-icon" data-app="series">📚</span> Series</a>
+    {% block header_apps %}
+    {% if not request.url.path.startswith('/posts') %}<a class="btn" data-feature-app="posts" data-header-app="posts" href="/posts"><span class="app-icon" data-app="posts">📝</span> Posts</a>{% endif %}
+    {% if not request.url.path.startswith('/bookmarks') %}<a class="btn" data-feature-app="bookmarks" data-header-app="bookmarks" href="/bookmarks"><span class="app-icon" data-app="bookmarks">🔖</span> Bookmarks</a>{% endif %}
+    {% if not request.url.path.startswith('/tasks') %}<a class="btn" data-feature-app="tasks" data-header-app="tasks" href="/tasks"><span class="app-icon" data-app="tasks">✅</span> Tasks</a>{% endif %}
+    {% if not request.url.path.startswith('/emails') %}<a class="btn" data-feature-app="emails" data-header-app="emails" href="/emails"><span class="app-icon" data-app="emails">✉️</span> Email</a>{% endif %}
+    {% if not request.url.path.startswith('/api-docs') %}<a class="btn" data-feature-app="api-docs" data-header-app="api-docs" href="/api-docs"><span class="app-icon" data-app="api-docs">📄</span> API Docs</a>{% endif %}
+    {% if not request.url.path.startswith('/notes') %}<a class="btn" data-feature-app="notes" data-header-app="notes" href="/notes"><span class="app-icon" data-app="notes">🗒️</span> Notes</a>{% endif %}
+    {% if not request.url.path.startswith('/books') %}<a class="btn" data-feature-app="books" data-header-app="books" href="/books"><span class="app-icon" data-app="books">📖</span> Books</a>{% endif %}
+    {% if not request.url.path.startswith('/music') %}<a class="btn" data-feature-app="music" data-header-app="music" href="/music"><span class="app-icon" data-app="music">🎵</span> Music</a>{% endif %}
+    {% if not request.url.path.startswith('/toeic') %}<a class="btn" data-feature-app="toeic" data-header-app="toeic" href="/toeic"><span class="app-icon" data-app="toeic">🎧</span> TOEIC</a>{% endif %}
+    {% if not request.url.path.startswith('/series') %}<a class="btn" data-feature-app="series" data-header-app="series" href="/series"><span class="app-icon" data-app="series">📚</span> Series</a>{% endif %}
+    {% endblock %}
     <!-- Fixed right-side controls — never move regardless of feature visibility -->
     <div class="topbar-fixed">
       <button class="btn btn-ghost" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
