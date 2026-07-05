@@ -35,6 +35,7 @@ class Settings:
     bookmarks_dir: Path
     emails_dir: Path
     db_path: Path
+    dict_db_path: Path
     templates: Path
     static: Path
     page_size: int
@@ -80,6 +81,7 @@ def load_settings(base: Path | None = None) -> Settings:
         bookmarks_dir=bookmarks_dir,
         emails_dir=emails_dir,
         db_path=base / data.get("db_path", ".kb/search.db"),
+        dict_db_path=base / data.get("dict_db_path", ".kb/dictionary.db"),
         templates=base / "templates",
         static=base / "static",
         page_size=int(ui.get("page_size", 20)),

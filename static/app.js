@@ -6,16 +6,17 @@
 // Must be defined BEFORE the IIFE so feature/icon functions can access them.
 // Feature list — controls Settings → Features panel toggle order and labels.
 var FEATURE_LIST = [
-  { app: "posts",     label: "Posts",     desc: "Notes & articles" },
-  { app: "series",    label: "Series",    desc: "Multi-part topics" },
-  { app: "books",     label: "Books",     desc: "Collections of chapters" },
-  { app: "toeic",     label: "TOEIC",     desc: "Practice sets" },
-  { app: "music",     label: "Music",     desc: "Tracks & playlists" },
-  { app: "notes",     label: "Notes",     desc: "Quick pinnable notes" },
   { app: "api-docs",  label: "API Docs",  desc: "REST API reference" },
   { app: "bookmarks", label: "Bookmarks", desc: "Saved links" },
-  { app: "tasks",     label: "Tasks",     desc: "Versioned tasks" },
+  { app: "books",     label: "Books",     desc: "Collections of chapters" },
+  { app: "dictionary",label: "Dictionary",desc: "Personal dictionary" },
   { app: "emails",    label: "Email",     desc: "Email templates & composer" },
+  { app: "music",     label: "Music",     desc: "Tracks & playlists" },
+  { app: "notes",     label: "Notes",     desc: "Quick pinnable notes" },
+  { app: "posts",     label: "Posts",     desc: "Notes & articles" },
+  { app: "series",    label: "Series",    desc: "Multi-part topics" },
+  { app: "tasks",     label: "Tasks",     desc: "Versioned tasks" },
+  { app: "toeic",     label: "TOEIC",     desc: "Practice sets" },
 ];
 
 var APP_ICONS_DEFAULT = {
@@ -29,12 +30,13 @@ var APP_ICONS_DEFAULT = {
   "bookmarks": "🔖",
   "tasks":     "✅",
   "emails":    "✉️",
+  "dictionary":"📕"
 };
 var APP_LABELS = {
   "posts": "Posts", "series": "Series", "books": "Books",
   "toeic": "TOEIC", "music": "Music", "notes": "Notes",
   "api-docs": "API Docs", "bookmarks": "Bookmarks", "tasks": "Tasks",
-  "emails": "Email",
+  "emails": "Email", "dictionary": "Dictionary"
 };
 
 (function () {
@@ -841,7 +843,12 @@ function buildIconPicker() {
   if (!list) return;
   var stored = _loadIcons();
 
-  list.innerHTML = Object.keys(APP_ICONS_DEFAULT).map(function (app) {
+  var keys = Object.keys(APP_ICONS_DEFAULT).sort(function(a, b) {
+    var labelA = (APP_LABELS[a] || a).toLowerCase();
+    var labelB = (APP_LABELS[b] || b).toLowerCase();
+    return labelA.localeCompare(labelB);
+  });
+  list.innerHTML = keys.map(function (app) {
     var defEmoji = APP_ICONS_DEFAULT[app];
     var customUrl = stored[app] || "";
     var previewHtml = customUrl
@@ -1297,3 +1304,161 @@ function loadBgPanel() {
       uploadsEl.innerHTML = '<p class="bg-gallery-empty">Failed to load library.</p>';
     });
 }
+
+// ===========================================================================
+// Font Management
+// ===========================================================================
+
+var FONT_DEFAULTS = [
+  { url: "/static/fonts/Inter.woff2", label: "Inter", desc: "Clean and modern" },
+  { url: "/static/fonts/Roboto.ttf", label: "Roboto", desc: "Classic Google font" },
+  { url: "/static/fonts/OpenSans.ttf", label: "Open Sans", desc: "Highly legible" }
+];
+
+var _fontsAll = null; // cached from /api/fonts
+
+function _loadFontPref() {
+  try { return JSON.parse(localStorage.getItem("kb-font") || "null"); } catch(e) { return null; }
+}
+function _saveFontPref(pref) {
+  try { localStorage.setItem("kb-font", JSON.stringify(pref)); } catch(e) {}
+}
+
+function _applyFont(pref) {
+  var root = document.documentElement;
+  var styleEl = document.getElementById("kb-font-style");
+  
+  if (pref && pref.url && pref.label) {
+    if (styleEl) {
+      styleEl.textContent = "@font-face { font-family: '" + pref.label + "'; src: url('" + pref.url + "'); font-display: swap; }";
+    }
+    root.style.setProperty("--kb-font-family", "'" + pref.label + "', sans-serif");
+  } else {
+    if (styleEl) styleEl.textContent = "";
+    root.style.removeProperty("--kb-font-family");
+  }
+}
+
+function setFont(pref) {
+  _saveFontPref(pref);
+  _applyFont(pref);
+  if (typeof buildFontPanel === "function") buildFontPanel();
+}
+
+function _uploadFontFile(file) {
+  var btn = document.getElementById("font-upload-btn");
+  if (btn) btn.textContent = "Uploading...";
+  
+  var form = new FormData();
+  form.append("file", file, file.name);
+  
+  fetch("/api/fonts", { method: "POST", body: form })
+    .then(function(r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function(data) {
+      _fontsAll = null; // bust cache
+      setFont({ url: data.url, label: data.label });
+      if (btn) btn.textContent = "Upload Font (.ttf, .woff2)";
+    })
+    .catch(function(err) {
+      alert("Upload failed: " + err.message);
+      if (btn) btn.textContent = "Upload Font (.ttf, .woff2)";
+    });
+}
+
+function deleteFont(filename) {
+  if (!confirm("Delete this font?")) return;
+  fetch("/api/fonts/" + encodeURIComponent(filename), { method: "DELETE" })
+    .then(function() {
+      _fontsAll = null; // bust cache
+      var current = _loadFontPref();
+      if (current && current.url.indexOf(filename) !== -1) {
+        setFont(null); // revert to default if deleted font was active
+      } else {
+        buildFontPanel();
+      }
+    })
+    .catch(function(err) { alert("Delete failed: " + err.message); });
+}
+
+function buildFontPanel() {
+  var bList = document.getElementById("font-panel-builtin-list");
+  var cList = document.getElementById("font-panel-custom-list");
+  if (!bList || !cList) return;
+  
+  var current = _loadFontPref();
+  var currentUrl = current ? current.url : null;
+  
+  function renderItem(f, isCustom) {
+    var active = (currentUrl === f.url);
+    var html = '<div class="feature-row" style="cursor:pointer" onclick="setFont({url:\'' + f.url + '\', label:\'' + f.label.replace(/'/g, "\\'") + '\'})">' +
+      '<div class="feature-row-info">' +
+        '<span class="feature-row-label" style="font-family:\'' + f.label + '\', sans-serif">' + f.label + '</span>' +
+        (f.desc ? '<span class="feature-row-desc">' + f.desc + '</span>' : '') +
+      '</div>';
+    
+    html += '<div style="display:flex; align-items:center; gap:1rem;">';
+    if (active) html += '<span class="badge" style="background:var(--accent); color:var(--accent-fg)">Active</span>';
+    if (isCustom) html += '<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation(); deleteFont(\'' + f.filename + '\')">✕</button>';
+    html += '</div></div>';
+    return html;
+  }
+  
+  // Render built-in fonts
+  var bHtml = "";
+  var systemActive = !currentUrl;
+  bHtml += '<div class="feature-row" style="cursor:pointer" onclick="setFont(null)">' +
+    '<div class="feature-row-info">' +
+      '<span class="feature-row-label">System Default</span>' +
+      '<span class="feature-row-desc">San Francisco, Segoe UI, Roboto</span>' +
+    '</div>' +
+    (systemActive ? '<span class="badge" style="background:var(--accent); color:var(--accent-fg)">Active</span>' : '') +
+  '</div>';
+  
+  FONT_DEFAULTS.forEach(function(f) { bHtml += renderItem(f, false); });
+  bList.innerHTML = bHtml;
+  
+  // Render custom fonts
+  if (_fontsAll !== null) {
+    if (_fontsAll.length === 0) {
+      cList.innerHTML = '<p class="muted" style="font-size:.85rem; margin-top:0">No custom fonts uploaded.</p>';
+    } else {
+      var cHtml = "";
+      _fontsAll.forEach(function(f) { cHtml += renderItem(f, true); });
+      cList.innerHTML = cHtml;
+    }
+  } else {
+    cList.innerHTML = '<p class="muted" style="font-size:.85rem; margin-top:0">Loading...</p>';
+    fetch("/api/fonts")
+      .then(function(r) { return r.json(); })
+      .then(function(data) { _fontsAll = data; buildFontPanel(); })
+      .catch(function() { cList.innerHTML = '<p class="muted" style="font-size:.85rem; margin-top:0">Failed to load fonts.</p>'; });
+  }
+}
+
+// Wire up Settings panel interactions
+document.addEventListener("DOMContentLoaded", function() {
+  // Wire Fonts Panel toggle
+  document.querySelectorAll('.settings-nav-item[data-panel="fonts"]').forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      if (typeof buildFontPanel === "function") buildFontPanel();
+    });
+  });
+  
+  // Wire Font Upload
+  var fInput = document.getElementById("font-upload-input");
+  var fBtn = document.getElementById("font-upload-btn");
+  if (fBtn && fInput) {
+    fBtn.addEventListener("click", function() { fInput.click(); });
+    fInput.addEventListener("change", function() {
+      if (fInput.files && fInput.files[0]) {
+        _uploadFontFile(fInput.files[0]);
+        fInput.value = "";
+      }
+    });
+  }
+  
+  var fReset = document.getElementById("font-reset-btn");
+  if (fReset) {
+    fReset.addEventListener("click", function() { setFont(null); });
+  }
+});

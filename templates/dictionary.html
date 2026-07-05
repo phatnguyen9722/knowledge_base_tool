@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Dictionary – Knowledge Base{% endblock %}
+
+{% block content %}
+<style>
+  /* Premium UI Enhancements for Dictionary */
+  .dict-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+  .dict-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  }
+  .dict-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-color: var(--accent);
+  }
+  .dict-word-title {
+    margin: 0 0 0.75rem;
+    color: var(--fg);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    background: linear-gradient(135deg, var(--fg), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .dict-card .markdown {
+    flex-grow: 1;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+  .dict-card-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  .dict-card:hover .dict-card-actions {
+    opacity: 1;
+  }
+  .dict-search-input {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    background: var(--bg);
+    color: var(--fg);
+    transition: all 0.2s ease;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+  }
+  .dict-search-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+</style>
+
+<div class="head-actions" style="margin-bottom: 2rem; align-items: center;">
+  <h1 style="font-weight: 800; letter-spacing: -0.02em; margin: 0;">Dictionary</h1>
+  
+  <div style="display:flex; gap:0.75rem; flex-wrap:wrap; align-items:center; flex:1; justify-content:flex-end;">
+    <div class="search-wrap" style="flex:0 1 350px; margin:0;">
+      <input type="search" id="dict-search-input" class="dict-search-input" placeholder="Search words or #tags...">
+    </div>
+    
+    <button id="dict-sort-btn" class="btn btn-ghost" title="Toggle Sort" style="border-radius: 24px; padding: 0.5rem 1rem;">
+      <span id="dict-sort-icon">⬇️ A-Z</span>
+    </button>
+    <button class="btn btn-primary" onclick="openDictModal()" style="border-radius: 24px; padding: 0.5rem 1.25rem; font-weight: 600;">+ Add Word</button>
+  </div>
+</div>
+
+<div id="dict-list" class="dict-grid">
+  <p class="muted">Loading dictionary...</p>
+</div>
+
+<!-- Modal for Add/Edit Word -->
+<div id="dict-modal" class="modal" hidden>
+  <div class="modal-card" style="max-width: 600px;">
+    <h2 id="dict-modal-title" style="margin-top:0">Add Word</h2>
+    
+    <input type="hidden" id="dict-id-input">
+    
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label for="dict-word-input" style="display:block; margin-bottom:.3rem; font-weight:bold;">Word / Phrase</label>
+      <input type="text" id="dict-word-input" style="width:100%; padding:.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg);" placeholder="Enter word...">
+    </div>
+    
+    <div class="form-group" style="margin-bottom: 1rem;">
+      <label for="dict-tags-input" style="display:block; margin-bottom:.3rem; font-weight:bold;">Tags (comma separated)</label>
+      <input type="text" id="dict-tags-input" style="width:100%; padding:.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg);" placeholder="e.g. backend, concept, python">
+    </div>
+
+    <div class="form-group" style="margin-bottom: 1.5rem;">
+      <label for="dict-desc-input" style="display:block; margin-bottom:.3rem; font-weight:bold;">Description (Markdown supported)</label>
+      <textarea id="dict-desc-input" rows="8" style="width:100%; padding:.5rem; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--fg); font-family:monospace;" placeholder="Write a detailed description..."></textarea>
+    </div>
+    
+    <div style="display:flex; gap:.5rem; justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeDictModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveDictWord()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Include marked.js for client-side markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+  let currentSort = "asc";
+  let searchTimeout = null;
+
+  function loadDictionary() {
+    const q = document.getElementById("dict-search-input").value;
+    const url = `/api/dictionary?search=${encodeURIComponent(q)}&sort_dir=${currentSort}`;
+    
+    fetch(url)
+      .then(r => r.json())
+      .then(words => renderDictionary(words))
+      .catch(err => {
+        document.getElementById("dict-list").innerHTML = '<p class="muted">Failed to load dictionary.</p>';
+      });
+  }
+
+  function renderDictionary(words) {
+    const list = document.getElementById("dict-list");
+    if (words.length === 0) {
+      list.innerHTML = '<p class="muted">No words found in the dictionary.</p>';
+      return;
+    }
+    
+    // Configure marked to support breaks like the rest of the app
+    marked.setOptions({ breaks: true });
+    
+    let html = "";
+    words.forEach(w => {
+      // Escape word to prevent basic XSS, but parse markdown for description
+      const safeWord = w.word.replace(/</g, "&lt;");
+      const renderedDesc = marked.parse(w.description);
+      
+      let tagsHtml = "";
+      if (w.tags && w.tags.length > 0) {
+        tagsHtml = '<div class="card-tags" style="margin-top:.5rem;">' + 
+                   w.tags.map(t => `<span class="tag" style="cursor:pointer;" onclick="setSearch('#${t}')">#${t}</span>`).join('') +
+                   '</div>';
+      }
+      
+      // Escape for JSON injection in onclick handler
+      const wJson = JSON.stringify(w).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+      
+      html += `
+        <article class="dict-card">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <h2 class="dict-word-title">${safeWord}</h2>
+            <div class="dict-card-actions" style="display:flex; gap:.25rem;">
+              <button class="btn btn-sm btn-ghost" title="Edit" onclick="editDictWord('${wJson}')" style="padding: .2rem .5rem; border:none; background:var(--bg);">✏️</button>
+              <button class="btn btn-sm btn-ghost" title="Delete" onclick="deleteDictWord(${w.id}, '${safeWord.replace(/'/g, "\\'")}')" style="padding: .2rem .5rem; border:none; color:var(--danger); background:var(--bg);">🗑️</button>
+            </div>
+          </div>
+          <div class="markdown">${renderedDesc}</div>
+          ${tagsHtml}
+        </article>
+      `;
+    });
+    
+    list.innerHTML = html;
+  }
+
+  function setSearch(val) {
+    document.getElementById("dict-search-input").value = val;
+    loadDictionary();
+  }
+
+  // Event Listeners
+  document.getElementById("dict-search-input").addEventListener("input", function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(loadDictionary, 300);
+  });
+
+  document.getElementById("dict-sort-btn").addEventListener("click", function() {
+    currentSort = currentSort === "asc" ? "desc" : "asc";
+    document.getElementById("dict-sort-icon").textContent = currentSort === "asc" ? "⬇️ A-Z" : "⬆️ Z-A";
+    loadDictionary();
+  });
+
+  // Modal logic
+  function openDictModal() {
+    document.getElementById("dict-modal-title").textContent = "Add Word";
+    document.getElementById("dict-id-input").value = "";
+    document.getElementById("dict-word-input").value = "";
+    document.getElementById("dict-desc-input").value = "";
+    document.getElementById("dict-tags-input").value = "";
+    document.getElementById("dict-modal").hidden = false;
+  }
+
+  function editDictWord(jsonStr) {
+    const w = JSON.parse(jsonStr.replace(/&quot;/g, '"').replace(/&apos;/g, "'"));
+    document.getElementById("dict-modal-title").textContent = "Edit Word";
+    document.getElementById("dict-id-input").value = w.id;
+    document.getElementById("dict-word-input").value = w.word;
+    document.getElementById("dict-desc-input").value = w.description;
+    document.getElementById("dict-tags-input").value = (w.tags || []).join(", ");
+    document.getElementById("dict-modal").hidden = false;
+  }
+
+  function closeDictModal() {
+    document.getElementById("dict-modal").hidden = true;
+  }
+
+  function saveDictWord() {
+    const id = document.getElementById("dict-id-input").value;
+    const word = document.getElementById("dict-word-input").value.trim();
+    const desc = document.getElementById("dict-desc-input").value.trim();
+    const tagsRaw = document.getElementById("dict-tags-input").value;
+    
+    if (!word || !desc) {
+      alert("Word and Description are required!");
+      return;
+    }
+    
+    const tags = tagsRaw.split(",").map(t => t.trim()).filter(t => t);
+    const payload = { word: word, description: desc, tags: tags };
+    
+    const url = id ? `/api/dictionary/${id}` : `/api/dictionary`;
+    const method = id ? "PUT" : "POST";
+    
+    fetch(url, {
+      method: method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+    .then(r => {
+      if (!r.ok) throw new Error("Failed to save word");
+      closeDictModal();
+      loadDictionary();
+    })
+    .catch(err => alert(err.message));
+  }
+
+  function deleteDictWord(id, word) {
+    if (!confirm(`Are you sure you want to delete '${word}'?`)) return;
+    
+    fetch(`/api/dictionary/${id}`, { method: "DELETE" })
+      .then(r => {
+        if (!r.ok) throw new Error("Failed to delete word");
+        loadDictionary();
+      })
+      .catch(err => alert(err.message));
+  }
+
+  // Initial load
+  document.addEventListener("DOMContentLoaded", loadDictionary);
+</script>
+{% endblock %}

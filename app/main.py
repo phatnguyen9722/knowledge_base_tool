@@ -23,6 +23,8 @@ from .api_docs import ApiDocsManager
 from .bookmarks import BookmarksManager
 from .books import BookManager
 from .config import load_settings
+from .dictionary_db import DictionaryDB
+from pydantic import BaseModel
 from .emails import EmailManager
 from .markdown import render_with_toc
 from .music import MusicManager
@@ -36,6 +38,7 @@ from .toeic import ToeicManager, parse_listening
 # Settings (paths resolved for dev + PyInstaller bundle)
 # --------------------------------------------------------------------------- #
 _settings = load_settings()
+dict_db = DictionaryDB(str(_settings.dict_db_path))
 POSTS_DIR = _settings.posts_dir
 IMG_DIR = _settings.img_dir
 TOEIC_DIR = _settings.toeic_dir
@@ -68,6 +71,9 @@ MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 BG_DIR = IMG_DIR / "background"
 BG_DIR.mkdir(parents=True, exist_ok=True)
 
+FONTS_DIR = _settings.posts_dir.parent / "fonts"
+FONTS_DIR.mkdir(parents=True, exist_ok=True)
+
 # Music uploads are stored here and served at /music.
 MUSIC_DIR.mkdir(parents=True, exist_ok=True)
 MAX_AUDIO_BYTES = 30 * 1024 * 1024  # 30 MB
@@ -82,6 +88,7 @@ TOEIC_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 app = FastAPI(title="Knowledge Base")
 app.mount("/static", StaticFiles(directory=str(STATIC)), name="static")
 app.mount("/img", StaticFiles(directory=str(IMG_DIR)), name="img")
+app.mount("/uploads/fonts", StaticFiles(directory=str(FONTS_DIR)), name="uploaded-fonts")
 # Audio served at /audio so it doesn't shadow the /music/* app routes.
 app.mount("/audio", StaticFiles(directory=str(MUSIC_DIR)), name="audio")
 app.mount("/toeic-audio", StaticFiles(directory=str(TOEIC_AUDIO_DIR)), name="toeic-audio")
@@ -194,6 +201,9 @@ async def home(request: Request):
         {"icon": "✉️", "app": "emails", "title": "Email Composers", "href": "/emails",
          "desc": "Template-based email drafting and composing.",
          "count": len(email_mgr.list())},
+        {"icon": "📕", "app": "dictionary", "title": "Dictionary", "href": "/dictionary",
+         "desc": "Personal dictionary to store words, phrases, and descriptions.",
+         "count": len(dict_db.get_words())},
     ]
     return templates.TemplateResponse(request, "home.html", {"features": features})
 
@@ -1847,3 +1857,116 @@ async def delete_background(filename: str):
         raise HTTPException(404, "Background not found")
     path.unlink()
     return {"ok": True}
+
+
+# -----------------------------------------------------------------------------
+# Fonts Management API
+# -----------------------------------------------------------------------------
+
+@app.post("/api/fonts")
+async def upload_font(file: UploadFile = File(...)):
+    """Upload a custom font file; stored in fonts/ and served at /uploads/fonts/…"""
+    ext = ""
+    name = (file.filename or "").lower()
+    for e in (".ttf", ".woff", ".woff2", ".otf"):
+        if name.endswith(e):
+            ext = e
+            break
+    if not ext:
+        raise HTTPException(400, "Unsupported font type (use .ttf, .otf, .woff, .woff2)")
+    
+    data = await file.read()
+    if not data:
+        raise HTTPException(400, "Empty file")
+    if len(data) > 10 * 1024 * 1024:  # 10 MB limit for fonts
+        raise HTTPException(413, "Font file too large (max 10 MB)")
+    
+    digest = hashlib.sha256(data).hexdigest()[:16]
+    filename = f"{digest}{ext}"
+    path = FONTS_DIR / filename
+    if not path.exists():
+        path.write_bytes(data)
+    
+    # Extract font family name (basic fallback to filename minus extension)
+    font_name = file.filename.rsplit('.', 1)[0].replace('-', ' ').replace('_', ' ').title()
+    
+    return {
+        "url": f"/uploads/fonts/{filename}",
+        "filename": filename,
+        "label": font_name
+    }
+
+
+@app.get("/api/fonts")
+async def list_fonts():
+    """Return all uploaded font files."""
+    allowed_ext = {".ttf", ".woff", ".woff2", ".otf"}
+    files = sorted(
+        (f for f in FONTS_DIR.iterdir() if f.is_file() and f.suffix.lower() in allowed_ext),
+        key=lambda f: f.stat().st_mtime,
+        reverse=True,
+    )
+    return [
+        {
+            "url": f"/uploads/fonts/{f.name}",
+            "filename": f.name,
+            "label": f.name.rsplit('.', 1)[0]
+        }
+        for f in files
+    ]
+
+
+@app.delete("/api/fonts/{filename}")
+async def delete_font(filename: str):
+    """Delete an uploaded font."""
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(400, "Invalid filename")
+    path = FONTS_DIR / filename
+    if not path.exists():
+        raise HTTPException(404, "Font not found")
+    path.unlink()
+    return {"ok": True}
+
+
+# -----------------------------------------------------------------------------
+# Self Dictionary API
+# -----------------------------------------------------------------------------
+
+class DictionaryEntry(BaseModel):
+    word: str
+    description: str
+    tags: list[str] = []
+
+@app.get("/dictionary")
+async def dictionary_page(request: Request):
+    """Render the Dictionary page."""
+    return templates.TemplateResponse(request, "dictionary.html", {})
+
+@app.get("/api/dictionary")
+async def get_dictionary(search: str = "", sort_dir: str = "asc"):
+    """Get all dictionary entries with search and sort."""
+    words = dict_db.get_words(search=search, sort_dir=sort_dir)
+    return words
+
+@app.post("/api/dictionary")
+async def create_dictionary_entry(entry: DictionaryEntry):
+    """Add a new word to the dictionary."""
+    dict_id = dict_db.add_word(entry.word, entry.description, entry.tags)
+    return {"id": dict_id, "status": "success"}
+
+@app.put("/api/dictionary/{dict_id}")
+async def update_dictionary_entry(dict_id: int, entry: DictionaryEntry):
+    """Update an existing word."""
+    success = dict_db.update_word(dict_id, entry.word, entry.description, entry.tags)
+    if not success:
+        raise HTTPException(404, "Entry not found")
+    return {"status": "success"}
+
+@app.delete("/api/dictionary/{dict_id}")
+async def delete_dictionary_entry(dict_id: int):
+    """Delete a word."""
+    success = dict_db.delete_word(dict_id)
+    if not success:
+        raise HTTPException(404, "Entry not found")
+    return {"status": "success"}
+
