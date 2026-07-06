@@ -73,6 +73,9 @@
       <input type="search" id="dict-search-input" class="dict-search-input" placeholder="Search words or #tags...">
     </div>
     
+    <button id="dict-view-btn" class="btn btn-ghost" title="Toggle View" style="border-radius: 24px; padding: 0.5rem 1rem;">
+      <span>🔲 Grid View</span>
+    </button>
     <button id="dict-sort-btn" class="btn btn-ghost" title="Toggle Sort" style="border-radius: 24px; padding: 0.5rem 1rem;">
       <span id="dict-sort-icon">⬇️ A-Z</span>
     </button>
@@ -82,6 +85,12 @@
 
 <div id="dict-list" class="dict-grid">
   <p class="muted">Loading dictionary...</p>
+</div>
+
+<div id="dict-pagination" style="display:flex; justify-content:center; align-items:center; gap:1rem; margin-top:2rem; margin-bottom:2rem;">
+  <button id="page-prev" class="btn btn-ghost" onclick="prevPage()">← Prev</button>
+  <span id="page-info" class="muted">Page 1 of 1</span>
+  <button id="page-next" class="btn btn-ghost" onclick="nextPage()">Next →</button>
 </div>
 
 <!-- Modal for Add/Edit Word -->
@@ -119,23 +128,31 @@
 <script>
   let currentSort = "asc";
   let searchTimeout = null;
+  let currentPage = 1;
+  let currentView = "grid";
+  const limit = 25;
+  let totalItems = 0;
 
   function loadDictionary() {
     const q = document.getElementById("dict-search-input").value;
-    const url = `/api/dictionary?search=${encodeURIComponent(q)}&sort_dir=${currentSort}`;
+    const url = `/api/dictionary?search=${encodeURIComponent(q)}&sort_dir=${currentSort}&page=${currentPage}&limit=${limit}`;
     
     fetch(url)
       .then(r => r.json())
-      .then(words => renderDictionary(words))
+      .then(data => renderDictionary(data))
       .catch(err => {
         document.getElementById("dict-list").innerHTML = '<p class="muted">Failed to load dictionary.</p>';
       });
   }
 
-  function renderDictionary(words) {
+  function renderDictionary(data) {
+    const words = data.items || [];
+    totalItems = data.total || 0;
+    
     const list = document.getElementById("dict-list");
     if (words.length === 0) {
       list.innerHTML = '<p class="muted">No words found in the dictionary.</p>';
+      updatePagination();
       return;
     }
     
@@ -174,15 +191,40 @@
     });
     
     list.innerHTML = html;
+    updatePagination();
+  }
+
+  function updatePagination() {
+    const totalPages = Math.ceil(totalItems / limit) || 1;
+    document.getElementById("page-info").textContent = `Page ${currentPage} of ${totalPages}`;
+    document.getElementById("page-prev").disabled = (currentPage <= 1);
+    document.getElementById("page-next").disabled = (currentPage >= totalPages);
+  }
+
+  function prevPage() {
+    if (currentPage > 1) {
+      currentPage--;
+      loadDictionary();
+    }
+  }
+
+  function nextPage() {
+    const totalPages = Math.ceil(totalItems / limit) || 1;
+    if (currentPage < totalPages) {
+      currentPage++;
+      loadDictionary();
+    }
   }
 
   function setSearch(val) {
     document.getElementById("dict-search-input").value = val;
+    currentPage = 1;
     loadDictionary();
   }
 
   // Event Listeners
   document.getElementById("dict-search-input").addEventListener("input", function() {
+    currentPage = 1;
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(loadDictionary, 300);
   });
@@ -190,7 +232,27 @@
   document.getElementById("dict-sort-btn").addEventListener("click", function() {
     currentSort = currentSort === "asc" ? "desc" : "asc";
     document.getElementById("dict-sort-icon").textContent = currentSort === "asc" ? "⬇️ A-Z" : "⬆️ Z-A";
+    currentPage = 1;
     loadDictionary();
+  });
+
+  document.getElementById("dict-view-btn").addEventListener("click", function() {
+    const list = document.getElementById("dict-list");
+    if (currentView === "grid") {
+      currentView = "list";
+      list.className = "";
+      list.style.display = "flex";
+      list.style.flexDirection = "column";
+      list.style.gap = "1rem";
+      this.innerHTML = "<span>📄 List View</span>";
+    } else {
+      currentView = "grid";
+      list.className = "dict-grid";
+      list.style.display = "";
+      list.style.flexDirection = "";
+      list.style.gap = "";
+      this.innerHTML = "<span>🔲 Grid View</span>";
+    }
   });
 
   // Modal logic
@@ -253,6 +315,12 @@
     fetch(`/api/dictionary/${id}`, { method: "DELETE" })
       .then(r => {
         if (!r.ok) throw new Error("Failed to delete word");
+        
+        // Adjust pagination if deleting last item on page
+        const listItems = document.getElementById("dict-list").children.length;
+        if (listItems === 1 && currentPage > 1) {
+          currentPage--;
+        }
         loadDictionary();
       })
       .catch(err => alert(err.message));

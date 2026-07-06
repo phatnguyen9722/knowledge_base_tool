@@ -79,7 +79,7 @@ class DictionaryDB:
             cursor = conn.execute("DELETE FROM dictionary WHERE id = ?", (dict_id,))
             return cursor.rowcount > 0
 
-    def get_words(self, search: str = "", sort_dir: str = "asc") -> List[Dict[str, Any]]:
+    def get_words(self, search: str = "", sort_dir: str = "asc", limit: int = 25, offset: int = 0) -> Dict[str, Any]:
         conn = self.get_conn()
         query = "SELECT id, word, description, created_at FROM dictionary"
         params = []
@@ -100,17 +100,20 @@ class DictionaryDB:
                 query += " WHERE word LIKE ? OR description LIKE ?"
                 params.extend([f"%{search}%", f"%{search}%"])
                 
-        # Sorting
+        # Calculate total count
+        count_query = query.replace("SELECT id, word, description, created_at", "SELECT COUNT(DISTINCT d.id) as total" if "JOIN" in query else "SELECT COUNT(id) as total")
+        total_row = conn.execute(count_query, params).fetchone()
+        total_count = total_row["total"] if total_row else 0
+
+        # Sorting and Pagination
         sort_dir = "DESC" if sort_dir.lower() == "desc" else "ASC"
-        query += f" ORDER BY word {sort_dir}"
+        query += f" ORDER BY word {sort_dir} LIMIT {limit} OFFSET {offset}"
         
         rows = conn.execute(query, params).fetchall()
         results = []
         
-        # Batch fetch tags to avoid N+1 query problem if there are many entries,
-        # but for simplicity, we can fetch all tags for the returned IDs.
         if not rows:
-            return results
+            return {"items": results, "total": total_count}
             
         dict_ids = [row["id"] for row in rows]
         placeholders = ",".join("?" for _ in dict_ids)
@@ -129,7 +132,7 @@ class DictionaryDB:
                 "tags": tags_map.get(row["id"], [])
             })
             
-        return results
+        return {"items": results, "total": total_count}
 
     def get_word(self, dict_id: int) -> Optional[Dict[str, Any]]:
         conn = self.get_conn()

@@ -1943,10 +1943,11 @@ async def dictionary_page(request: Request):
     return templates.TemplateResponse(request, "dictionary.html", {})
 
 @app.get("/api/dictionary")
-async def get_dictionary(search: str = "", sort_dir: str = "asc"):
+async def get_dictionary(search: str = "", sort_dir: str = "asc", page: int = 1, limit: int = 25):
     """Get all dictionary entries with search and sort."""
-    words = dict_db.get_words(search=search, sort_dir=sort_dir)
-    return words
+    offset = (page - 1) * limit
+    words_data = dict_db.get_words(search=search, sort_dir=sort_dir, limit=limit, offset=offset)
+    return words_data
 
 @app.post("/api/dictionary")
 async def create_dictionary_entry(entry: DictionaryEntry):
