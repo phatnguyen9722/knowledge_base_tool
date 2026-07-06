@@ -2,75 +2,131 @@
 {% block title %}{{ 'Edit Task' if task else 'New Task' }} – Knowledge Base{% endblock %}
 
 {% block content %}
-  <div class="feed-head">
-    <h1>{{ 'Edit Task' if task else 'New Task' }}</h1>
-    <a class="btn" href="/tasks{{ '/' ~ task.slug if task else '' }}">Cancel</a>
+<style>
+  .task-edit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  .task-edit-header h1 {
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .form-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  }
+  .form-group-modern {
+    margin-bottom: 1.5rem;
+  }
+  .form-group-modern label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--fg);
+  }
+  .form-input-modern {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    transition: all 0.2s ease;
+  }
+  .form-input-modern:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  .subtask-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .subtask-inputs {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .subtask-status {
+    width: 140px;
+  }
+</style>
+
+<div class="task-edit-header">
+  <h1>{{ 'Edit Task' if task else 'New Task' }}</h1>
+  <a class="btn btn-ghost" href="/tasks{{ '/' ~ task.slug if task else '' }}">Cancel</a>
+</div>
+
+<form method="post" action="/tasks/{{ task.slug ~ '/edit' if task else 'new' }}" style="max-width: 800px;">
+  
+  <div class="form-card">
+    <div class="form-group-modern">
+      <label>Task Title</label>
+      <input type="text" name="title" class="form-input-modern" value="{{ task.latest.title if task else '' }}"
+             required placeholder="e.g. Build new feature, Fix bug...">
+    </div>
+    
+    <div class="form-group-modern" style="margin-bottom: 0;">
+      <label>Assigned User</label>
+      <input type="text" name="user" class="form-input-modern" value="{{ task.latest.user if task else '' }}"
+             required placeholder="Who is responsible for this?">
+    </div>
   </div>
 
-  <form method="post" action="/tasks/{{ task.slug ~ '/edit' if task else 'new' }}" class="editor-layout">
-    <div class="editor-main">
-      <div class="meta-card">
-        <label>
-          <strong>Task Title</strong>
-          <input type="text" name="title" value="{{ task.latest.title if task else '' }}"
-                 required placeholder="e.g. Build new feature...">
-        </label>
-        
-        <label>
-          <strong>User Name</strong>
-          <input type="text" name="user" value="{{ task.latest.user if task else '' }}"
-                 required placeholder="Your name...">
-        </label>
-      </div>
-
-      <div class="meta-card">
-        <h3>Subtasks</h3>
-        <table class="subtasks-table" id="subtasks-table" style="width:100%; border-collapse: collapse; margin-bottom: 1rem;">
-          <thead>
-            <tr>
-              <th style="text-align:left; padding-bottom:.5rem;">Title</th>
-              <th style="text-align:left; padding-bottom:.5rem; width:120px;">Status</th>
-              <th style="width:40px;"></th>
-            </tr>
-          </thead>
-          <tbody id="subtasks-body">
-            {% if task and task.latest.subtasks %}
-              {% for st in task.latest.subtasks %}
-              <tr class="subtask-row" style="border-bottom:1px solid var(--border);">
-                <td style="padding:.5rem 0;">
-                  <input type="text" name="st_title_{{ loop.index0 }}" value="{{ st.title }}" style="width:100%; margin-bottom:.4rem;" required placeholder="Subtask title">
-                  <input type="text" name="st_notes_{{ loop.index0 }}" value="{{ st.notes }}" style="width:100%; font-size:.85rem;" placeholder="Current details or notes...">
-                </td>
-                <td style="padding:.5rem .5rem; vertical-align:top;">
-                  <select name="st_status_{{ loop.index0 }}" style="width:100%;">
-                    <option value="to-do" {% if st.status == 'to-do' %}selected{% endif %}>To Do</option>
-                    <option value="in-progress" {% if st.status == 'in-progress' %}selected{% endif %}>In Progress</option>
-                    <option value="done" {% if st.status == 'done' %}selected{% endif %}>Done</option>
-                  </select>
-                </td>
-                <td style="padding:.5rem 0; text-align:right; vertical-align:top;">
-                  <button type="button" class="btn btn-sm btn-danger remove-st" title="Remove">✕</button>
-                </td>
-              </tr>
-              {% endfor %}
-            {% endif %}
-          </tbody>
-        </table>
-        <button type="button" class="btn btn-sm" id="add-subtask">+ Add Subtask</button>
-      </div>
-
-      <div class="meta-card">
-        <label>
-          <strong>Description (Markdown)</strong>
-          <textarea name="content" rows="10" placeholder="Optional details...">{{ task.latest.content if task else '' }}</textarea>
-        </label>
-      </div>
-
-      <div style="margin-top: 1rem;">
-        <button type="submit" class="btn btn-primary">Save Task</button>
-      </div>
+  <div class="form-card">
+    <h3 style="margin-top:0; margin-bottom:1.5rem;">Subtasks</h3>
+    <div id="subtasks-body">
+      {% if task and task.latest.subtasks %}
+        {% for st in task.latest.subtasks %}
+        <div class="subtask-card subtask-row">
+          <div class="subtask-inputs">
+            <input type="text" name="st_title_{{ loop.index0 }}" class="form-input-modern" value="{{ st.title }}" required placeholder="Subtask title">
+            <input type="text" name="st_notes_{{ loop.index0 }}" class="form-input-modern" value="{{ st.notes }}" style="font-size: 0.9rem;" placeholder="Current details or notes...">
+          </div>
+          <div class="subtask-status">
+            <select name="st_status_{{ loop.index0 }}" class="form-input-modern">
+              <option value="to-do" {% if st.status == 'to-do' %}selected{% endif %}>To Do</option>
+              <option value="in-progress" {% if st.status == 'in-progress' %}selected{% endif %}>In Progress</option>
+              <option value="done" {% if st.status == 'done' %}selected{% endif %}>Done</option>
+            </select>
+          </div>
+          <div>
+            <button type="button" class="btn btn-danger remove-st" title="Remove Subtask" style="padding: 0.75rem;">✕</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% endif %}
     </div>
-  </form>
+    <button type="button" class="btn btn-ghost" id="add-subtask" style="margin-top: 0.5rem;">+ Add Subtask</button>
+  </div>
+
+  <div class="form-card">
+    <div class="form-group-modern" style="margin-bottom: 0;">
+      <label>Description (Markdown supported)</label>
+      <textarea name="content" class="form-input-modern" rows="8" placeholder="Add additional context, acceptance criteria, or details...">{{ task.latest.content if task else '' }}</textarea>
+    </div>
+  </div>
+
+  <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+    <a class="btn btn-ghost" href="/tasks{{ '/' ~ task.slug if task else '' }}">Cancel</a>
+    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; font-weight: bold;">Save Task</button>
+  </div>
+
+</form>
 
   <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -79,32 +135,31 @@
       let stCount = tbody.querySelectorAll("tr").length;
 
       addBtn.addEventListener("click", function() {
-        const tr = document.createElement("tr");
-        tr.className = "subtask-row";
-        tr.style.borderBottom = "1px solid var(--border)";
-        tr.innerHTML = `
-          <td style="padding:.5rem 0;">
-            <input type="text" name="st_title_${stCount}" placeholder="Subtask title" style="width:100%; margin-bottom:.4rem;" required>
-            <input type="text" name="st_notes_${stCount}" placeholder="Current details or notes..." style="width:100%; font-size:.85rem;">
-          </td>
-          <td style="padding:.5rem .5rem; vertical-align:top;">
-            <select name="st_status_${stCount}" style="width:100%;">
+        const div = document.createElement("div");
+        div.className = "subtask-card subtask-row";
+        div.innerHTML = `
+          <div class="subtask-inputs">
+            <input type="text" name="st_title_${stCount}" class="form-input-modern" placeholder="Subtask title" required>
+            <input type="text" name="st_notes_${stCount}" class="form-input-modern" placeholder="Current details or notes..." style="font-size: 0.9rem;">
+          </div>
+          <div class="subtask-status">
+            <select name="st_status_${stCount}" class="form-input-modern">
               <option value="to-do">To Do</option>
               <option value="in-progress">In Progress</option>
               <option value="done">Done</option>
             </select>
-          </td>
-          <td style="padding:.5rem 0; text-align:right; vertical-align:top;">
-            <button type="button" class="btn btn-sm btn-danger remove-st" title="Remove">✕</button>
-          </td>
+          </div>
+          <div>
+            <button type="button" class="btn btn-danger remove-st" title="Remove Subtask" style="padding: 0.75rem;">✕</button>
+          </div>
         `;
-        tbody.appendChild(tr);
+        tbody.appendChild(div);
         stCount++;
       });
 
       tbody.addEventListener("click", function(e) {
         if (e.target.closest(".remove-st")) {
-          e.target.closest("tr").remove();
+          e.target.closest(".subtask-row").remove();
         }
       });
     });
