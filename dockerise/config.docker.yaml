@@ -14,7 +14,11 @@ data:
   music_dir: /data/music
   notes_dir: /data/notes
   db_path: /data/.kb/search.db
+  dict_db_path: /data/.kb/dictionary.db
   emails_dir: /data/emails
+  tasks_dir: /data/tasks
+  api_docs_dir: /data/api-docs
+  bookmarks_dir: /data/bookmarks
 
 ui:
   theme: vodka
