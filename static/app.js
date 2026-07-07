@@ -1074,6 +1074,7 @@ document.addEventListener("DOMContentLoaded", function () {
 // Add more entries here whenever you drop a new file into static/.
 var BG_DEFAULTS = [
   { url: "/static/background_1.svg", label: "Background 1" },
+  { url: "/static/mecha_bg.jpg", label: "Mecha Theme Background" },
 ];
 
 var _bgAll = null;  // cached list from /api/backgrounds (null = not yet loaded)
@@ -1485,6 +1486,74 @@ function buildAppearancePanel() {
   if (hc && appr.headerColor) {
     hc.value = appr.headerColor;
   }
+  
+  buildAppearanceAppColors();
+}
+
+function buildAppearanceAppColors() {
+  var list = document.getElementById("appearance-app-colors-list");
+  if (!list) return;
+  
+  var appColors = JSON.parse(localStorage.getItem("kb-app-colors") || "{}");
+  var appDescColors = JSON.parse(localStorage.getItem("kb-app-desc-colors") || "{}");
+  
+  list.innerHTML = FEATURE_LIST.map(function(feat) {
+    var appColor = appColors[feat.app] || "";
+    var descColor = appDescColors[feat.app] || "";
+    return '<div style="display:flex; justify-content:space-between; align-items:center; padding:.25rem 0; border-bottom:1px solid var(--border);">' +
+      '<span style="font-size:0.9rem;">' + feat.label + '</span>' +
+      '<div style="display:flex; align-items:center; gap:1rem;">' +
+        '<div style="display:flex; align-items:center; gap:0.25rem;">' +
+          '<span class="muted" style="font-size:0.75rem; text-transform:uppercase; margin-right:.2rem;">Title</span>' +
+          '<input type="color" data-app-color="' + feat.app + '" value="' + (appColor || '#555555') + '" style="width:28px; height:28px; padding:0; border:1px solid var(--border); border-radius:4px; cursor:pointer; background:transparent;" title="Set title color for ' + feat.label + '">' +
+          (appColor ? '<button type="button" class="btn btn-sm btn-ghost" style="padding:0 .25rem; height:28px;" data-app-color-reset="' + feat.app + '" title="Reset title color">✕</button>' : '') +
+        '</div>' +
+        '<div style="display:flex; align-items:center; gap:0.25rem;">' +
+          '<span class="muted" style="font-size:0.75rem; text-transform:uppercase; margin-right:.2rem;">Desc</span>' +
+          '<input type="color" data-app-desc-color="' + feat.app + '" value="' + (descColor || '#555555') + '" style="width:28px; height:28px; padding:0; border:1px solid var(--border); border-radius:4px; cursor:pointer; background:transparent;" title="Set description color for ' + feat.label + '">' +
+          (descColor ? '<button type="button" class="btn btn-sm btn-ghost" style="padding:0 .25rem; height:28px;" data-app-desc-color-reset="' + feat.app + '" title="Reset description color">✕</button>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  
+  list.querySelectorAll("[data-app-color]").forEach(function (inp) {
+    inp.addEventListener("change", function () {
+      var appC = JSON.parse(localStorage.getItem("kb-app-colors") || "{}");
+      appC[inp.getAttribute("data-app-color")] = inp.value;
+      localStorage.setItem("kb-app-colors", JSON.stringify(appC));
+      _applyAppColors();
+      buildAppearanceAppColors();
+    });
+  });
+  list.querySelectorAll("[data-app-color-reset]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var appC = JSON.parse(localStorage.getItem("kb-app-colors") || "{}");
+      delete appC[btn.getAttribute("data-app-color-reset")];
+      localStorage.setItem("kb-app-colors", JSON.stringify(appC));
+      _applyAppColors();
+      buildAppearanceAppColors();
+    });
+  });
+
+  list.querySelectorAll("[data-app-desc-color]").forEach(function (inp) {
+    inp.addEventListener("change", function () {
+      var appDC = JSON.parse(localStorage.getItem("kb-app-desc-colors") || "{}");
+      appDC[inp.getAttribute("data-app-desc-color")] = inp.value;
+      localStorage.setItem("kb-app-desc-colors", JSON.stringify(appDC));
+      _applyAppColors();
+      buildAppearanceAppColors();
+    });
+  });
+  list.querySelectorAll("[data-app-desc-color-reset]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var appDC = JSON.parse(localStorage.getItem("kb-app-desc-colors") || "{}");
+      delete appDC[btn.getAttribute("data-app-desc-color-reset")];
+      localStorage.setItem("kb-app-desc-colors", JSON.stringify(appDC));
+      _applyAppColors();
+      buildAppearanceAppColors();
+    });
+  });
 }
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -1532,3 +1601,23 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(function() { saveBtn.textContent = origText; }, 2000);
   });
 });
+
+function _applyAppColors() {
+  var appColors = JSON.parse(localStorage.getItem("kb-app-colors") || "{}");
+  var appDescColors = JSON.parse(localStorage.getItem("kb-app-desc-colors") || "{}");
+  var css3 = "";
+  var allApps = new Set([...Object.keys(appColors), ...Object.keys(appDescColors)]);
+  allApps.forEach(function(app) {
+    var rule = '[data-feature-app="' + app + '"] { ';
+    if (appColors[app]) {
+      rule += '--fg: ' + appColors[app] + ' !important; --accent: ' + appColors[app] + ' !important; ';
+    }
+    if (appDescColors[app]) {
+      rule += '--muted: ' + appDescColors[app] + ' !important; ';
+    }
+    rule += '}\n';
+    css3 += rule;
+  });
+  var styleTag = document.getElementById("app-color-style");
+  if (styleTag) styleTag.textContent = css3;
+}

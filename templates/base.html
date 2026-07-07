@@ -10,6 +10,7 @@
   <style id="kb-font-style"></style>
   <style id="feature-hide-style"></style>
   <style id="header-hide-style"></style>
+  <style id="app-color-style"></style>
   <script>
     (function () {
       try {
@@ -55,6 +56,28 @@
         if (appr.homeOpacity != null) document.documentElement.style.setProperty("--kb-home-opacity", appr.homeOpacity / 100);
         if (appr.headerOpacity != null) document.documentElement.style.setProperty("--kb-header-opacity", appr.headerOpacity / 100);
         if (appr.headerColor) document.documentElement.style.setProperty("--kb-header-color", appr.headerColor);
+      } catch (e) {}
+      try {
+        var appColors = JSON.parse(localStorage.getItem("kb-app-colors") || "{}");
+        var appDescColors = JSON.parse(localStorage.getItem("kb-app-desc-colors") || "{}");
+        var css3 = "";
+        
+        // Combine keys from both objects
+        var allApps = new Set([...Object.keys(appColors), ...Object.keys(appDescColors)]);
+        
+        allApps.forEach(function(app) {
+          var rule = '[data-feature-app="' + app + '"] { ';
+          if (appColors[app]) {
+            rule += '--fg: ' + appColors[app] + ' !important; --accent: ' + appColors[app] + ' !important; ';
+          }
+          if (appDescColors[app]) {
+            rule += '--muted: ' + appDescColors[app] + ' !important; ';
+          }
+          rule += '}\n';
+          css3 += rule;
+        });
+        
+        if (css3) document.getElementById("app-color-style").textContent = css3;
       } catch (e) {}
     })();
   </script>
@@ -275,6 +298,8 @@
                 <span class="swatch sw-dracula"></span><span>Dracula</span></button>
               <button class="theme-opt" data-theme-set="reverie">
                 <span class="swatch sw-reverie"></span><span>Reverie</span></button>
+              <button class="theme-opt" data-theme-set="gundam">
+                <span class="swatch sw-gundam"></span><span>Mecha</span></button>
             </div>
           </div>
           
@@ -303,6 +328,12 @@
               <input type="color" id="app-header-color" style="height:38px; width:60px; padding:0; cursor:pointer; background:var(--bg); border:1px solid var(--border); border-radius:4px;">
               <button class="btn btn-ghost" id="app-header-color-reset">Reset to Theme Default</button>
             </div>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">App Card Colors</label>
+            <p class="muted" style="font-size:0.85rem; margin-top:0; margin-bottom:1rem;">Assign custom accent colors to individual home page cards.</p>
+            <div id="appearance-app-colors-list" style="display:flex; flex-direction:column; gap:.5rem;"></div>
           </div>
           
           <div style="text-align: right; margin-top: 1rem;">
@@ -336,6 +367,14 @@
   <button id="to-top" class="to-top" title="Back to top" aria-label="Back to top">↑</button>
 
   <script src="/static/app.js?v={{ asset_v() }}"></script>
+  <script>
+    if (!localStorage.getItem('mecha_applied')) {
+      localStorage.setItem('kb-theme', 'mecha');
+      localStorage.setItem('kb-background', JSON.stringify({url: '/static/mecha_bg.jpg', size: 'cover', opacity: 100}));
+      localStorage.setItem('mecha_applied', '1');
+      location.reload();
+    }
+  </script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

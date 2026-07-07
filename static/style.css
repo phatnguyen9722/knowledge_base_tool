@@ -105,6 +105,22 @@
   --danger: #ff6b8a;
   --mark: #7a2d50;
 }
+/* Gundam — sleek robotic gunmetal with neon blue and red accents */
+[data-theme="mecha"] {
+  --bg: #1a1e24;
+  --fg: #f4f6f8;
+  --muted: #8b949e;
+  --border: #3d4450;
+  --card: rgba(34, 39, 46, 0.85);
+  --accent: #0055A4;
+  --accent-fg: #ffffff;
+  --danger: #E52B50;
+  --mark: #F1C40F;
+}
+[data-theme="mecha"] body {
+  background-color: #1a1e24;
+  background-attachment: fixed;
+}
 /* Gradient wash — applied on body so it shows behind solid components */
 [data-theme="reverie"] body {
   background: linear-gradient(to right, #3a1c71, #d76d77, #ffaf7b);
@@ -131,8 +147,7 @@ a:hover { text-decoration: underline; }
   padding: .75rem 1.25rem;
   border-bottom: 1px solid var(--border);
   position: sticky; top: 0; 
-  background: var(--kb-header-color, var(--bg)); 
-  opacity: var(--kb-header-opacity, 1);
+  background: color-mix(in srgb, var(--kb-header-color, var(--bg)) calc(var(--kb-header-opacity, 1) * 100%), transparent); 
   z-index: 10;
 }
 .brand { font-weight: 700; font-size: 1.1rem; }
@@ -351,6 +366,11 @@ a:hover { text-decoration: underline; }
 [data-theme="reverie"] .method-put    { background: #78350f; color: #fef3c7; }
 [data-theme="reverie"] .method-patch  { background: #4c1d95; color: #ede9fe; }
 [data-theme="reverie"] .method-delete { background: #7f1d1d; color: #fee2e2; }
+[data-theme="gundam"]  .method-get    { background: #0055A4; color: #ffffff; }
+[data-theme="gundam"]  .method-post   { background: #047857; color: #ffffff; }
+[data-theme="gundam"]  .method-put    { background: #b45309; color: #ffffff; }
+[data-theme="gundam"]  .method-patch  { background: #4c1d95; color: #ffffff; }
+[data-theme="gundam"]  .method-delete { background: #E52B50; color: #ffffff; }
 
 /* Filter bar */
 .api-filter-bar { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; margin: 1rem 0 .75rem; }
@@ -407,9 +427,9 @@ tr.required { background: rgba(220,38,38,.04); }
 .home-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
 .home-card {
   display: flex; flex-direction: column; gap: .35rem;
-  border: 1px solid var(--border); border-radius: 14px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 14px; 
+  background: color-mix(in srgb, var(--card) calc(var(--kb-home-opacity, 1) * 100%), transparent);
   padding: 1.25rem; color: var(--fg); transition: border-color .12s ease, transform .12s ease;
-  opacity: var(--kb-home-opacity, 1);
 }
 .home-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
 .home-icon { font-size: 2rem; }
@@ -886,6 +906,7 @@ input:checked + .toggle-slider::before { transform: translateX(18px); }
 .sw-amethyst  { background: linear-gradient(135deg, #1a1325 50%, #a855f7 50%); }
 .sw-dracula   { background: linear-gradient(135deg, #282a36 50%, #bd93f9 50%); }
 .sw-reverie   { background: linear-gradient(to right, #3a1c71, #d76d77, #ffaf7b); }
+.sw-gundam    { background: linear-gradient(135deg, #1a1e24 50%, #0055A4 50%); }
 
 .shortcuts { border-collapse: collapse; margin: .5rem 0 1rem; }
 .shortcuts td { padding: .25rem .8rem .25rem 0; }
