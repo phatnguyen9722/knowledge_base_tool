@@ -48,7 +48,15 @@
       <h1>Posts</h1>
     {% endif %}
     <span class="muted">{{ total }} post{{ '' if total == 1 else 's' }}{% if active_tags|length > 1 %} · all tags (AND){% endif %}</span>
-    <a class="btn btn-primary head-action" href="/new">+ New post</a>
+    <div class="head-actions">
+      <form action="/posts/import" method="post" enctype="multipart/form-data">
+        <label class="btn">
+          Import MD
+          <input type="file" name="files" multiple accept=".md" style="display:none;" onchange="this.form.submit();">
+        </label>
+      </form>
+      <a class="btn btn-primary" href="/new">+ New post</a>
+    </div>
   </div>
 
   {% if not posts %}

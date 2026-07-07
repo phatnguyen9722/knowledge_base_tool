@@ -1701,6 +1701,38 @@ async def delete_post(slug: str):
 
 
 # --------------------------------------------------------------------------- #
+# Import / Export
+# --------------------------------------------------------------------------- #
+@app.post("/posts/import")
+async def import_posts(files: list[UploadFile] = File(...)):
+    for file in files:
+        if not file.filename.endswith(".md"):
+            continue
+        content = await file.read()
+        safe_name = Path(file.filename).name
+        (POSTS_DIR / safe_name).write_bytes(content)
+        
+    pm.rebuild_index()
+    tm.rebuild()
+    return RedirectResponse("/", status_code=303)
+
+
+@app.get("/posts/{slug}/export")
+async def export_post(slug: str):
+    post = pm.read(slug)
+    if not post:
+        raise HTTPException(404)
+    post_path = POSTS_DIR / f"{slug}.md"
+    if not post_path.exists():
+        raise HTTPException(404)
+    return FileResponse(
+        path=post_path, 
+        filename=post_path.name,
+        media_type="text/markdown"
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Search API (JSON) – used by the live search bar
 # --------------------------------------------------------------------------- #
 @app.get("/api/search")

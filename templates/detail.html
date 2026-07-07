@@ -17,6 +17,7 @@
           {% for t in post.tags %}<a href="/posts?tag={{ t|urlencode }}" class="tag">#{{ t }}</a>{% endfor %}
         </div>
         <div class="post-actions">
+          <a class="btn" href="/posts/{{ post.slug }}/export" download>Export MD</a>
           <a class="btn" href="/edit/{{ post.slug }}">Edit</a>
           <button class="btn btn-danger" data-delete="{{ post.slug }}">Delete</button>
         </div>
