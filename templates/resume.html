@@ -4,13 +4,24 @@
 
 {% block content %}
 <div class="resume-container">
-  <div class="resume-actions print-hide">
-    <a href="/resume/edit" class="btn btn-primary">Edit Resume</a>
-    <a href="/resume/export.md" class="btn" download>Export MD</a>
-    <button onclick="window.print()" class="btn">Export PDF</button>
+  <div class="resume-actions print-hide" style="display:flex; justify-content:space-between; align-items:center;">
+    <div style="display:flex; align-items:center; gap:0.5rem;">
+      <label for="resume-template" style="font-weight:600; font-size:0.9rem;">Template:</label>
+      <select id="resume-template" class="input" style="width:auto; padding:0.4rem; margin:0;" onchange="changeTemplate()">
+        <option value="template-default">Default Theme</option>
+        <option value="template-classic">Classic / Minimalist</option>
+        <option value="template-modern">Modern / Bold</option>
+        <option value="template-sidebar">Two-Column / Sidebar</option>
+      </select>
+    </div>
+    <div style="display:flex; gap:0.5rem;">
+      <a href="/resume/edit" class="btn btn-primary">Edit Resume</a>
+      <a href="/resume/export.md" class="btn" download>Export MD</a>
+      <button onclick="window.print()" class="btn">Export PDF</button>
+    </div>
   </div>
 
-  <div class="resume-paper">
+  <div id="resume-paper" class="resume-paper template-default">
     <header class="resume-header">
       <h1>{{ resume.name }}</h1>
       {% if resume.title %}<h2>{{ resume.title }}</h2>{% endif %}
@@ -26,7 +37,7 @@
     </header>
 
     {% if content_html %}
-    <section class="resume-section">
+    <section class="resume-section resume-section-summary">
       <h3>Summary</h3>
       <div class="resume-content">
         {{ content_html | safe }}
@@ -35,7 +46,7 @@
     {% endif %}
 
     {% if resume.skills %}
-    <section class="resume-section">
+    <section class="resume-section resume-section-skills">
       <h3>Skills</h3>
       <ul class="resume-skills">
         {% for skill in resume.skills %}
@@ -46,7 +57,7 @@
     {% endif %}
 
     {% if resume.experience %}
-    <section class="resume-section">
+    <section class="resume-section resume-section-experience">
       <h3>Experience</h3>
       <div class="resume-items">
         {% for exp in resume.experience %}
@@ -66,7 +77,7 @@
     {% endif %}
 
     {% if resume.education %}
-    <section class="resume-section">
+    <section class="resume-section resume-section-education">
       <h3>Education</h3>
       <div class="resume-items">
         {% for edu in resume.education %}
@@ -83,4 +94,28 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+  function changeTemplate() {
+    const sel = document.getElementById('resume-template').value;
+    const paper = document.getElementById('resume-paper');
+    
+    // Remove old templates
+    paper.classList.remove('template-default', 'template-classic', 'template-modern', 'template-sidebar');
+    
+    // Add new template
+    paper.classList.add(sel);
+    
+    // Save preference
+    localStorage.setItem('kb-resume-template', sel);
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('kb-resume-template');
+    if (saved) {
+      document.getElementById('resume-template').value = saved;
+      changeTemplate();
+    }
+  });
+</script>
 {% endblock %}
