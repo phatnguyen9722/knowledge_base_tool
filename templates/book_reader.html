@@ -10,6 +10,15 @@
   height: calc(100vh - 120px);
   min-height: 500px;
   user-select: none;
+  background: var(--bg); /* Ensure background is solid in fullscreen */
+}
+.reader-shell:fullscreen {
+  height: 100vh;
+  padding: 1rem;
+}
+.reader-shell:-webkit-full-screen {
+  height: 100vh;
+  padding: 1rem;
 }
 .reader-topbar {
   display: flex;
@@ -326,6 +335,12 @@
   <div class="reader-topbar">
     <a class="reader-topbar-back" href="/books/{{ collection.slug }}/resources">← {{ collection.title }}</a>
     <div class="reader-topbar-title">{{ fname }}</div>
+    <div class="reader-zoom-controls" style="display:flex; align-items:center; gap:0.25rem;">
+      <button class="btn btn-sm btn-ghost" id="btn-zoom-out" aria-label="Zoom out" style="padding:0.2rem 0.5rem; font-size:1rem;">−</button>
+      <span id="zoom-level" style="font-size:.85rem; color:var(--muted); width:45px; text-align:center; display:inline-block;">100%</span>
+      <button class="btn btn-sm btn-ghost" id="btn-zoom-in" aria-label="Zoom in" style="padding:0.2rem 0.5rem; font-size:1rem;">+</button>
+      <button class="btn btn-sm btn-ghost" id="btn-fullscreen" aria-label="Fullscreen" style="padding:0.2rem 0.5rem; font-size:1rem; margin-left:0.5rem;" title="Toggle Fullscreen">⛶</button>
+    </div>
     <div class="reader-topbar-counter" id="page-counter">
       {% if mode == "image" %}
         Spread {{ (page // 2) + 1 }} / {{ ((total_pages + 1) // 2) }}
@@ -425,6 +440,54 @@ const MODE  = "{{ mode }}";
 let   CURRENT = {{ page }};
 
 /* ─── Utility ──────────────────────────────────────────────────── */
+let currentZoom = 100;
+const btnZoomIn = document.getElementById('btn-zoom-in');
+const btnZoomOut = document.getElementById('btn-zoom-out');
+const zoomLevelText = document.getElementById('zoom-level');
+
+function applyZoom() {
+  zoomLevelText.textContent = currentZoom + '%';
+  if (MODE === 'text') {
+    const textStage = document.getElementById('text-stage');
+    if (textStage) textStage.style.fontSize = (1.05 * currentZoom / 100) + 'rem';
+  } else if (MODE === 'image') {
+    const bookSpread = document.getElementById('book-spread');
+    if (bookSpread) bookSpread.style.transform = `scale(${currentZoom / 100})`;
+    
+    // Enable scrolling if zoomed in beyond 100%
+    const bookStage = document.getElementById('book-stage');
+    if (bookStage) {
+       bookStage.style.overflow = currentZoom > 100 ? 'auto' : 'hidden';
+    }
+  }
+}
+
+btnZoomIn.addEventListener('click', () => {
+  if (currentZoom < 300) { currentZoom += 10; applyZoom(); }
+});
+btnZoomOut.addEventListener('click', () => {
+  if (currentZoom > 50) { currentZoom -= 10; applyZoom(); }
+});
+
+const btnFullscreen = document.getElementById('btn-fullscreen');
+const readerShell = document.querySelector('.reader-shell');
+
+btnFullscreen.addEventListener('click', () => {
+  if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+    if (readerShell.requestFullscreen) {
+      readerShell.requestFullscreen();
+    } else if (readerShell.webkitRequestFullscreen) {
+      readerShell.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  }
+});
+
 function pageUrl(n) {
   return `/books/${COLL}/resources/${FNAME}/page/${n}`;
 }
