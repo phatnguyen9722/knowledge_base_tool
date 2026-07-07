@@ -50,6 +50,12 @@
           document.documentElement.style.setProperty("--kb-font-family", "'" + kbFont.label + "', sans-serif");
         }
       } catch (e) {}
+      try {
+        var appr = JSON.parse(localStorage.getItem("kb-appearance") || "{}");
+        if (appr.homeOpacity != null) document.documentElement.style.setProperty("--kb-home-opacity", appr.homeOpacity / 100);
+        if (appr.headerOpacity != null) document.documentElement.style.setProperty("--kb-header-opacity", appr.headerOpacity / 100);
+        if (appr.headerColor) document.documentElement.style.setProperty("--kb-header-color", appr.headerColor);
+      } catch (e) {}
     })();
   </script>
 </head>
@@ -100,7 +106,7 @@
       <!-- LEFT: sidebar navigation -->
       <nav class="settings-sidebar">
         <div class="settings-sidebar-title">Settings</div>
-        <button class="settings-nav-item active" data-panel="theme">Theme</button>
+        <button class="settings-nav-item active" data-panel="appearance">Appearance</button>
         <button class="settings-nav-item" data-panel="features">Features</button>
         <button class="settings-nav-item" data-panel="app-icons">App Icons</button>
         <button class="settings-nav-item" data-panel="icon-library">Icon Library</button>
@@ -111,38 +117,7 @@
       <!-- RIGHT: content panels (only one shown at a time) -->
       <div class="settings-content">
 
-        <!-- Theme panel -->
-        <div class="settings-panel" id="panel-theme">
-          <h3 class="settings-panel-title">Theme</h3>
-          <p class="muted settings-panel-desc">Choose a colour scheme for the app.</p>
-          <div class="features-search-wrap">
-            <span class="features-search-icon">🔍</span>
-            <input type="search" id="theme-search-input"
-                   placeholder="Search themes…"
-                   autocomplete="off" aria-label="Search themes">
-            <button type="button" id="theme-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
-          </div>
-          <div class="theme-grid" id="theme-grid">
-            <button class="theme-opt" data-theme-set="vodka">
-              <span class="swatch sw-vodka"></span><span>Vodka</span></button>
-            <button class="theme-opt" data-theme-set="midnight">
-              <span class="swatch sw-midnight"></span><span>Midnight</span></button>
-            <button class="theme-opt" data-theme-set="sapphire">
-              <span class="swatch sw-sapphire"></span><span>Sapphire</span></button>
-            <button class="theme-opt" data-theme-set="aegean">
-              <span class="swatch sw-aegean"></span><span>Aegean</span></button>
-            <button class="theme-opt" data-theme-set="champagne">
-              <span class="swatch sw-champagne"></span><span>Champagne</span></button>
-            <button class="theme-opt" data-theme-set="rose">
-              <span class="swatch sw-rose"></span><span>Rosé</span></button>
-            <button class="theme-opt" data-theme-set="amethyst">
-              <span class="swatch sw-amethyst"></span><span>Amethyst</span></button>
-            <button class="theme-opt" data-theme-set="dracula">
-              <span class="swatch sw-dracula"></span><span>Dracula</span></button>
-            <button class="theme-opt" data-theme-set="reverie">
-              <span class="swatch sw-reverie"></span><span>Reverie</span></button>
-          </div>
-        </div>
+
 
         <!-- Features + Header Apps panel (merged, two-column) -->
         <div class="settings-panel" id="panel-features" hidden>
@@ -266,6 +241,73 @@
           <!-- Uploaded fonts -->
           <h4 style="margin: 1.5rem 0 .5rem; font-size: .85rem; color: var(--muted); text-transform: uppercase;">Your Fonts</h4>
           <div id="font-panel-custom-list" style="display:flex; flex-direction:column; gap:.5rem;"></div>
+        </div>
+
+        <!-- Appearance panel -->
+        <div class="settings-panel" id="panel-appearance">
+          <h3 class="settings-panel-title">Appearance & Theme</h3>
+          <p class="muted settings-panel-desc">Customize UI theme, opacity, and header colors.</p>
+          
+          <!-- Theme Selection -->
+          <div class="form-group" style="margin-bottom: 2rem;">
+            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Color Theme</label>
+            <div class="features-search-wrap">
+              <span class="features-search-icon">🔍</span>
+              <input type="search" id="theme-search-input" placeholder="Search themes…" autocomplete="off" aria-label="Search themes">
+              <button type="button" id="theme-search-clear" class="features-search-clear" hidden aria-label="Clear search">✕</button>
+            </div>
+            <div class="theme-grid" id="theme-grid">
+              <button class="theme-opt" data-theme-set="vodka">
+                <span class="swatch sw-vodka"></span><span>Vodka</span></button>
+              <button class="theme-opt" data-theme-set="midnight">
+                <span class="swatch sw-midnight"></span><span>Midnight</span></button>
+              <button class="theme-opt" data-theme-set="sapphire">
+                <span class="swatch sw-sapphire"></span><span>Sapphire</span></button>
+              <button class="theme-opt" data-theme-set="aegean">
+                <span class="swatch sw-aegean"></span><span>Aegean</span></button>
+              <button class="theme-opt" data-theme-set="champagne">
+                <span class="swatch sw-champagne"></span><span>Champagne</span></button>
+              <button class="theme-opt" data-theme-set="rose">
+                <span class="swatch sw-rose"></span><span>Rosé</span></button>
+              <button class="theme-opt" data-theme-set="amethyst">
+                <span class="swatch sw-amethyst"></span><span>Amethyst</span></button>
+              <button class="theme-opt" data-theme-set="dracula">
+                <span class="swatch sw-dracula"></span><span>Dracula</span></button>
+              <button class="theme-opt" data-theme-set="reverie">
+                <span class="swatch sw-reverie"></span><span>Reverie</span></button>
+            </div>
+          </div>
+          
+          <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
+          
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Home Apps Opacity</label>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <input type="range" id="app-home-opacity" min="10" max="100" value="100" style="flex:1;">
+              <span id="app-home-opacity-val" style="width:40px; text-align:right;">100%</span>
+            </div>
+            <p class="muted" style="font-size:0.85rem; margin-top:.25rem;">Adjust the transparency of app cards on the home page.</p>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Header Bar Opacity</label>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <input type="range" id="app-header-opacity" min="10" max="100" value="100" style="flex:1;">
+              <span id="app-header-opacity-val" style="width:40px; text-align:right;">100%</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Header Bar Color</label>
+            <div style="display:flex; gap:.5rem;">
+              <input type="color" id="app-header-color" style="height:38px; width:60px; padding:0; cursor:pointer; background:var(--bg); border:1px solid var(--border); border-radius:4px;">
+              <button class="btn btn-ghost" id="app-header-color-reset">Reset to Theme Default</button>
+            </div>
+          </div>
+          
+          <div style="text-align: right; margin-top: 1rem;">
+            <button class="btn btn-primary" id="save-appearance-btn">Save Changes</button>
+          </div>
         </div>
 
         <div class="settings-footer">

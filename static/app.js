@@ -129,7 +129,7 @@ var APP_LABELS = {
 
   // --- Settings modal — two-panel (sidebar nav + content) -----------------
   const settingsModal = $("#settings-modal");
-  var _activeSettingsPanel = "theme";   // remember last active panel
+  var _activeSettingsPanel = "appearance";   // remember last active panel
 
   function showSettingsPanel(id) {
     _activeSettingsPanel = id;
@@ -147,6 +147,7 @@ var APP_LABELS = {
     if (id === "app-icons")    buildIconPicker();
     if (id === "icon-library") loadIconLibrary();
     if (id === "background")   loadBgPanel();
+    if (id === "appearance")   buildAppearancePanel();
   }
 
   // Wire sidebar nav items
@@ -1461,4 +1462,73 @@ document.addEventListener("DOMContentLoaded", function() {
   if (fReset) {
     fReset.addEventListener("click", function() { setFont(null); });
   }
+});
+
+// --- Appearance Panel Logic ---
+function buildAppearancePanel() {
+  var appr = JSON.parse(localStorage.getItem("kb-appearance") || "{}");
+  
+  var ho = document.getElementById("app-home-opacity");
+  var hoVal = document.getElementById("app-home-opacity-val");
+  var he = document.getElementById("app-header-opacity");
+  var heVal = document.getElementById("app-header-opacity-val");
+  var hc = document.getElementById("app-header-color");
+  
+  if (ho && appr.homeOpacity != null) {
+    ho.value = appr.homeOpacity;
+    hoVal.textContent = appr.homeOpacity + "%";
+  }
+  if (he && appr.headerOpacity != null) {
+    he.value = appr.headerOpacity;
+    heVal.textContent = appr.headerOpacity + "%";
+  }
+  if (hc && appr.headerColor) {
+    hc.value = appr.headerColor;
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  var ho = document.getElementById("app-home-opacity");
+  var hoVal = document.getElementById("app-home-opacity-val");
+  var he = document.getElementById("app-header-opacity");
+  var heVal = document.getElementById("app-header-opacity-val");
+  var hc = document.getElementById("app-header-color");
+  
+  if (ho) ho.addEventListener("input", function() { hoVal.textContent = ho.value + "%"; });
+  if (he) he.addEventListener("input", function() { heVal.textContent = he.value + "%"; });
+  
+  if (hc) hc.addEventListener("input", function() {
+    hc.removeAttribute("data-reset");
+  });
+
+  var resetBtn = document.getElementById("app-header-color-reset");
+  if (resetBtn) resetBtn.addEventListener("click", function() {
+    hc.value = "#000000"; // Visual reset
+    hc.setAttribute("data-reset", "true");
+  });
+  
+  var saveBtn = document.getElementById("save-appearance-btn");
+  if (saveBtn) saveBtn.addEventListener("click", function() {
+    var appr = JSON.parse(localStorage.getItem("kb-appearance") || "{}");
+    if (ho) appr.homeOpacity = ho.value;
+    if (he) appr.headerOpacity = he.value;
+    
+    if (hc) {
+      if (hc.getAttribute("data-reset") === "true") {
+        delete appr.headerColor;
+        document.documentElement.style.removeProperty("--kb-header-color");
+      } else {
+        appr.headerColor = hc.value;
+        document.documentElement.style.setProperty("--kb-header-color", hc.value);
+      }
+    }
+    
+    localStorage.setItem("kb-appearance", JSON.stringify(appr));
+    if (ho) document.documentElement.style.setProperty("--kb-home-opacity", ho.value / 100);
+    if (he) document.documentElement.style.setProperty("--kb-header-opacity", he.value / 100);
+    
+    var origText = saveBtn.textContent;
+    saveBtn.textContent = "Saved!";
+    setTimeout(function() { saveBtn.textContent = origText; }, 2000);
+  });
 });

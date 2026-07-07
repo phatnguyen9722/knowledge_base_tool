@@ -130,7 +130,10 @@ a:hover { text-decoration: underline; }
   display: flex; align-items: center; gap: 1rem;
   padding: .75rem 1.25rem;
   border-bottom: 1px solid var(--border);
-  position: sticky; top: 0; background: var(--bg); z-index: 10;
+  position: sticky; top: 0; 
+  background: var(--kb-header-color, var(--bg)); 
+  opacity: var(--kb-header-opacity, 1);
+  z-index: 10;
 }
 .brand { font-weight: 700; font-size: 1.1rem; }
 /* Search bar capped at ~20% of the header; action buttons pushed to the right. */
@@ -406,6 +409,7 @@ tr.required { background: rgba(220,38,38,.04); }
   display: flex; flex-direction: column; gap: .35rem;
   border: 1px solid var(--border); border-radius: 14px; background: var(--card);
   padding: 1.25rem; color: var(--fg); transition: border-color .12s ease, transform .12s ease;
+  opacity: var(--kb-home-opacity, 1);
 }
 .home-card:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-2px); }
 .home-icon { font-size: 2rem; }
