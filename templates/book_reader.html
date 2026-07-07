@@ -330,6 +330,12 @@
 }
 </style>
 
+<svg width="0" height="0" style="position:absolute; pointer-events:none;">
+  <filter id="zoom-sharpen">
+    <feConvolveMatrix order="3 3" preserveAlpha="true" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0"/>
+  </filter>
+</svg>
+
 <div class="reader-shell">
   <!-- Top bar -->
   <div class="reader-topbar">
@@ -452,7 +458,15 @@ function applyZoom() {
     if (textStage) textStage.style.fontSize = (1.05 * currentZoom / 100) + 'rem';
   } else if (MODE === 'image') {
     const bookSpread = document.getElementById('book-spread');
-    if (bookSpread) bookSpread.style.transform = `scale(${currentZoom / 100})`;
+    if (bookSpread) {
+      bookSpread.style.transform = `scale(${currentZoom / 100})`;
+      // Apply sharpen filter if zoomed in > 100% to keep text crisp
+      if (currentZoom > 100) {
+        bookSpread.style.filter = 'url(#zoom-sharpen) contrast(1.05)';
+      } else {
+        bookSpread.style.filter = 'none';
+      }
+    }
     
     // Enable scrolling if zoomed in beyond 100%
     const bookStage = document.getElementById('book-stage');

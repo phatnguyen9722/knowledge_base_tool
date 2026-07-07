@@ -23,24 +23,115 @@
         </div>
         {% endif %}
         <div class="post-actions">
+          {% if collection.type == 'written' %}
           <a class="btn btn-primary" href="/books/{{ collection.slug }}/new">+ New Chapter</a>
-          <a class="btn" href="/books/{{ collection.slug }}/resources">📚 Imported Books</a>
+          {% endif %}
           <a class="btn" href="/books/{{ collection.slug }}/edit">Edit</a>
         </div>
       </div>
     </header>
 
-    {% if not collection.chapters %}
-      <p class="muted empty">No chapters yet. Add the first one →</p>
-    {% endif %}
+    {% if collection.type == 'written' %}
+      {% if not collection.chapters %}
+        <p class="muted empty">No chapters yet. Add the first one →</p>
+      {% endif %}
 
-    <ol class="chapter-list">
-      {% for ch in collection.chapters %}
-      <li>
-        <a href="/books/{{ collection.slug }}/{{ ch.slug }}">{{ ch.title }}</a>
-        {% if ch.updated %}<span class="muted">· {{ ch.updated }}</span>{% endif %}
-      </li>
-      {% endfor %}
-    </ol>
+      <ol class="chapter-list">
+        {% for ch in collection.chapters %}
+        <li>
+          <a href="/books/{{ collection.slug }}/{{ ch.slug }}">{{ ch.title }}</a>
+          {% if ch.updated %}<span class="muted">· {{ ch.updated }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    {% elif collection.type == 'imported' %}
+      <div class="resource-upload-zone" id="upload-zone" style="margin-top: 1.5rem;">
+        <form id="upload-form" method="post" action="/books/{{ collection.slug }}/resources/upload" enctype="multipart/form-data">
+          <input type="file" id="file-input" name="file" accept=".pdf,.epub,.mobi,.cbz,.fb2,.xps,.azw,.azw3" hidden>
+          <div class="resource-dropzone" id="dropzone">
+            <div class="resource-dropzone-inner">
+              <div class="resource-dropzone-icon">📚</div>
+              <div class="resource-dropzone-label">
+                Drop a book file here, or <label for="file-input" class="resource-dropzone-browse">browse</label>
+              </div>
+              <div class="muted" style="font-size:.8rem; margin-top:.3rem;">
+                PDF · EPUB · MOBI · CBZ · FB2 · XPS · AZW
+              </div>
+            </div>
+          </div>
+        </form>
+        <div id="upload-status" style="display:none; text-align:center; padding:.75rem; font-weight:500; color:var(--accent);">
+          Uploading…
+        </div>
+      </div>
+
+      {% if resources %}
+      <div class="resource-list" style="margin-top:1.5rem;">
+        {% for r in resources %}
+        <div class="resource-card">
+          <div class="resource-card-icon">{{ r.format_icon }}</div>
+          <div class="resource-card-info">
+            <div class="resource-card-name">{{ r.display_name }}</div>
+            <div class="resource-card-meta muted">
+              {{ r.ext[1:]|upper }}
+              · {{ (r.size_bytes / 1024 / 1024)|round(2) }} MB
+            </div>
+          </div>
+          <div class="resource-card-actions">
+            <a class="btn btn-primary btn-sm" href="/books/{{ collection.slug }}/resources/{{ r.filename }}/read">
+              📖 Read
+            </a>
+            <form method="post" action="/books/{{ collection.slug }}/resources/{{ r.filename }}/delete"
+                  style="display:inline;"
+                  onsubmit="return confirm('Remove {{ r.filename }}? This cannot be undone.')">
+              <button type="submit" class="btn btn-sm btn-danger">🗑</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="margin-top:2.5rem;">
+        <div style="font-size:3rem;">📭</div>
+        <p class="muted">No files yet. Upload one above to get started.</p>
+      </div>
+      {% endif %}
+      
+      <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('file-input');
+        const form = document.getElementById('upload-form');
+        const status = document.getElementById('upload-status');
+      
+        ['dragenter', 'dragover'].forEach(e => {
+          if(dropzone) dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.add('dropping'); });
+        });
+        ['dragleave', 'drop'].forEach(e => {
+          if(dropzone) dropzone.addEventListener(e, ev => { ev.preventDefault(); dropzone.classList.remove('dropping'); });
+        });
+        if(dropzone) {
+          dropzone.addEventListener('drop', ev => {
+            const f = ev.dataTransfer.files[0];
+            if (f) submitFile(f);
+          });
+        }
+        if(fileInput) {
+          fileInput.addEventListener('change', () => {
+            if (fileInput.files[0]) submitFile(fileInput.files[0]);
+          });
+        }
+      
+        function submitFile(file) {
+          dropzone.style.display = 'none';
+          status.style.display = 'block';
+          status.textContent = `Uploading "${file.name}"…`;
+          const fd = new FormData();
+          fd.append('file', file);
+          fetch(form.action, { method: 'POST', body: fd })
+            .then(r => { if (r.ok || r.redirected) window.location.reload(); else throw new Error(r.status); })
+            .catch(() => { status.textContent = '❌ Upload failed. Check the file type.'; status.style.color = 'var(--danger)'; });
+        }
+      </script>
+    {% endif %}
   </article>
 {% endblock %}

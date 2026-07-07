@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import io
 import mimetypes
+import shutil
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
@@ -87,6 +88,7 @@ class Collection:
     title: str
     author: str = ""
     description: str = ""
+    type: str = "written"                        # 'written' or 'imported'
     cover: str = ""                              # image URL (e.g. /img/<hash>.png)
     tags: list[str] = field(default_factory=list)
     created: str = ""
@@ -147,6 +149,7 @@ class BookManager:
             "title": data.get("title", "").strip() or slug,
             "author": data.get("author", "").strip(),
             "description": data.get("description", "").strip(),
+            "type": data.get("type", "written").strip(),
             "cover": data.get("cover", "").strip(),
             "tags": self._norm_tags(data.get("tags")),
             "created": today,
@@ -166,6 +169,7 @@ class BookManager:
             "title": data.get("title", "").strip() or existing.title,
             "author": data.get("author", existing.author).strip(),
             "description": data.get("description", existing.description).strip(),
+            "type": data.get("type", existing.type).strip(),
             "cover": data.get("cover", existing.cover).strip(),
             "tags": self._norm_tags(data.get("tags")) if "tags" in data else existing.tags,
             "created": existing.created or date.today().isoformat(),
@@ -174,6 +178,14 @@ class BookManager:
         fm = frontmatter.Post("", **meta)
         self._meta_path(slug).write_text(frontmatter.dumps(fm), encoding="utf-8")
         return slug
+
+    def delete_collection(self, slug: str) -> bool:
+        """Delete an entire collection (directory and all contents)."""
+        cdir = self._coll_dir(slug)
+        if cdir.exists() and cdir.is_dir():
+            shutil.rmtree(cdir)
+            return True
+        return False
 
     def read_collection(self, slug: str, with_chapters: bool = True) -> Collection | None:
         meta_path = self._meta_path(slug)
@@ -186,6 +198,7 @@ class BookManager:
             title=str(m.get("title", slug)),
             author=str(m.get("author", "")),
             description=str(m.get("description", "")),
+            type=str(m.get("type", "written")),
             cover=str(m.get("cover", "")),
             tags=self._norm_tags(m.get("tags")),
             created=str(m.get("created", "")),

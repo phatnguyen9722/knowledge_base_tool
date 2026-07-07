@@ -419,6 +419,7 @@ async def book_collection_create(
     title: str = Form(...),
     author: str = Form(""),
     description: str = Form(""),
+    type: str = Form("written"),
     cover: str = Form(""),
     tags: str = Form(""),
 ):
@@ -427,6 +428,7 @@ async def book_collection_create(
             "title": title,
             "author": author,
             "description": description,
+            "type": type,
             "cover": cover,
             "tags": _parse_tags(tags),
         }
@@ -439,8 +441,12 @@ async def book_collection_detail(request: Request, coll: str):
     collection = books.read_collection(coll)
     if not collection:
         raise HTTPException(404)
+    
+    # If it's an imported book type, we want to show the resources on this page directly
+    resources = books.list_resources(coll) if collection.type == "imported" else []
+    
     return templates.TemplateResponse(
-        request, "book_collection.html", {"collection": collection}
+        request, "book_collection.html", {"collection": collection, "resources": resources}
     )
 
 
@@ -460,6 +466,7 @@ async def book_collection_update(
     title: str = Form(...),
     author: str = Form(""),
     description: str = Form(""),
+    type: str = Form("written"),
     cover: str = Form(""),
     tags: str = Form(""),
 ):
@@ -469,6 +476,7 @@ async def book_collection_update(
             "title": title,
             "author": author,
             "description": description,
+            "type": type,
             "cover": cover,
             "tags": _parse_tags(tags),
         },
@@ -476,6 +484,13 @@ async def book_collection_update(
     if slug is None:
         raise HTTPException(404)
     return RedirectResponse(f"/books/{slug}", status_code=303)
+
+
+@app.post("/books/{coll}/delete")
+async def book_collection_delete(coll: str):
+    if not books.delete_collection(coll):
+        raise HTTPException(404)
+    return RedirectResponse("/books", status_code=303)
 
 
 @app.get("/books/{coll}/new", response_class=HTMLResponse)
