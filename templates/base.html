@@ -14,7 +14,7 @@
   <script>
     (function () {
       try {
-        var t = localStorage.getItem("kb-theme");
+        var t = localStorage.getItem("kb-theme") || "dracula";
         if (t) document.documentElement.setAttribute("data-theme", t);
       } catch (e) {}
       try {
@@ -375,11 +375,8 @@
 
   <script src="/static/app.js?v={{ asset_v() }}"></script>
   <script>
-    if (!localStorage.getItem('mecha_applied')) {
-      localStorage.setItem('kb-theme', 'mecha');
-      localStorage.setItem('kb-background', JSON.stringify({url: '/static/mecha_bg.jpg', size: 'cover', opacity: 100}));
-      localStorage.setItem('mecha_applied', '1');
-      location.reload();
+    if (!localStorage.getItem('kb-theme')) {
+      localStorage.setItem('kb-theme', 'dracula');
     }
   </script>
   {% block scripts %}{% endblock %}
