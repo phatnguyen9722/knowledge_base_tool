@@ -305,15 +305,7 @@
           
           <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
           
-          <div class="form-group" style="margin-bottom: 1.5rem;">
-            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Home Apps Opacity</label>
-            <div style="display:flex; align-items:center; gap:1rem;">
-              <input type="range" id="app-home-opacity" min="10" max="100" value="100" style="flex:1;">
-              <span id="app-home-opacity-val" style="width:40px; text-align:right;">100%</span>
-            </div>
-            <p class="muted" style="font-size:0.85rem; margin-top:.25rem;">Adjust the transparency of app cards on the home page.</p>
-          </div>
-
+          <h4 style="margin-bottom: 1rem;">Header Bar Settings</h4>
           <div class="form-group" style="margin-bottom: 1.5rem;">
             <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Header Bar Opacity</label>
             <div style="display:flex; align-items:center; gap:1rem;">
@@ -329,6 +321,21 @@
               <button class="btn btn-ghost" id="app-header-color-reset">Reset to Theme Default</button>
             </div>
           </div>
+          <div style="text-align: right; margin-top: 1rem;">
+            <button class="btn btn-primary" id="save-appearance-header-btn">Save Header Settings</button>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
+
+          <h4 style="margin-bottom: 1rem;">Home Page Settings</h4>
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Home Apps Opacity</label>
+            <div style="display:flex; align-items:center; gap:1rem;">
+              <input type="range" id="app-home-opacity" min="10" max="100" value="100" style="flex:1;">
+              <span id="app-home-opacity-val" style="width:40px; text-align:right;">100%</span>
+            </div>
+            <p class="muted" style="font-size:0.85rem; margin-top:.25rem;">Adjust the transparency of app cards on the home page.</p>
+          </div>
           
           <div class="form-group" style="margin-bottom: 1.5rem;">
             <label style="display:block; margin-bottom:.5rem; font-weight:bold;">App Card Colors</label>
@@ -337,7 +344,7 @@
           </div>
           
           <div style="text-align: right; margin-top: 1rem;">
-            <button class="btn btn-primary" id="save-appearance-btn">Save Changes</button>
+            <button class="btn btn-primary" id="save-appearance-home-btn">Save Home Settings</button>
           </div>
         </div>
 

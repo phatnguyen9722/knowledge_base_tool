@@ -1568,37 +1568,50 @@ document.addEventListener("DOMContentLoaded", function() {
   
   if (hc) hc.addEventListener("input", function() {
     hc.removeAttribute("data-reset");
+    hc.setAttribute("data-changed", "true");
   });
 
   var resetBtn = document.getElementById("app-header-color-reset");
   if (resetBtn) resetBtn.addEventListener("click", function() {
     hc.value = "#000000"; // Visual reset
     hc.setAttribute("data-reset", "true");
+    hc.removeAttribute("data-changed");
   });
   
-  var saveBtn = document.getElementById("save-appearance-btn");
-  if (saveBtn) saveBtn.addEventListener("click", function() {
+  var saveHeaderBtn = document.getElementById("save-appearance-header-btn");
+  if (saveHeaderBtn) saveHeaderBtn.addEventListener("click", function() {
     var appr = JSON.parse(localStorage.getItem("kb-appearance") || "{}");
-    if (ho) appr.homeOpacity = ho.value;
     if (he) appr.headerOpacity = he.value;
     
     if (hc) {
       if (hc.getAttribute("data-reset") === "true") {
         delete appr.headerColor;
         document.documentElement.style.removeProperty("--kb-header-color");
-      } else {
+      } else if (hc.getAttribute("data-changed") === "true") {
         appr.headerColor = hc.value;
         document.documentElement.style.setProperty("--kb-header-color", hc.value);
       }
     }
     
     localStorage.setItem("kb-appearance", JSON.stringify(appr));
-    if (ho) document.documentElement.style.setProperty("--kb-home-opacity", ho.value / 100);
     if (he) document.documentElement.style.setProperty("--kb-header-opacity", he.value / 100);
     
-    var origText = saveBtn.textContent;
-    saveBtn.textContent = "Saved!";
-    setTimeout(function() { saveBtn.textContent = origText; }, 2000);
+    var origText = saveHeaderBtn.textContent;
+    saveHeaderBtn.textContent = "Saved!";
+    setTimeout(function() { saveHeaderBtn.textContent = origText; }, 2000);
+  });
+
+  var saveHomeBtn = document.getElementById("save-appearance-home-btn");
+  if (saveHomeBtn) saveHomeBtn.addEventListener("click", function() {
+    var appr = JSON.parse(localStorage.getItem("kb-appearance") || "{}");
+    if (ho) appr.homeOpacity = ho.value;
+    
+    localStorage.setItem("kb-appearance", JSON.stringify(appr));
+    if (ho) document.documentElement.style.setProperty("--kb-home-opacity", ho.value / 100);
+    
+    var origText = saveHomeBtn.textContent;
+    saveHomeBtn.textContent = "Saved!";
+    setTimeout(function() { saveHomeBtn.textContent = origText; }, 2000);
   });
 });
 
