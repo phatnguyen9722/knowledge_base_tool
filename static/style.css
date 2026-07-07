@@ -1280,3 +1280,184 @@ body::before {
 }
 .book-reader-toc-list li.active a,
 .book-reader-toc-list li a:hover { background: var(--bg-alt); color: var(--accent); }
+
+/* -------------------------------------------------------------------------- */
+/* Resume / CV styles */
+/* -------------------------------------------------------------------------- */
+.resume-container {
+  max-width: 800px;
+  margin: 0 auto 2rem;
+}
+.resume-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+.resume-paper {
+  background: var(--card);
+  padding: 3rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid var(--border);
+  color: var(--text);
+  line-height: 1.6;
+}
+.resume-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--accent);
+}
+.resume-header h1 {
+  margin: 0 0 0.25rem 0;
+  font-size: 2.5rem;
+}
+.resume-header h2 {
+  margin: 0 0 1rem 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.resume-contact {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+}
+.resume-contact span {
+  display: inline-flex;
+  align-items: center;
+}
+.resume-section {
+  margin-bottom: 2rem;
+}
+.resume-section h3 {
+  font-size: 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.25rem;
+  margin-bottom: 1rem;
+}
+.resume-content {
+  font-size: 1rem;
+}
+.resume-skills {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.resume-skills li {
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.resume-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.resume-item-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.25rem;
+}
+.resume-role {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+.resume-date {
+  font-size: 0.9rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.resume-company {
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
+.resume-details {
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+}
+
+/* Print CSS optimized for PDF export */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
+  }
+  .topbar, .sidebar, .print-hide, .to-top {
+    display: none !important;
+  }
+  .content {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+  .resume-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+  .resume-paper {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  .resume-header {
+    border-bottom: 2px solid #333 !important;
+  }
+  .resume-section h3 {
+    color: #333 !important;
+    border-bottom: 1px solid #ccc !important;
+  }
+  .resume-skills li {
+    border: 1px solid #ccc !important;
+    background: transparent !important;
+  }
+  a {
+    text-decoration: none !important;
+    color: black !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Modern Input Elements */
+/* -------------------------------------------------------------------------- */
+.input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  margin-top: 0.3rem;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.input::placeholder {
+  color: var(--muted);
+}
+textarea.input {
+  resize: vertical;
+  min-height: 80px;
+}

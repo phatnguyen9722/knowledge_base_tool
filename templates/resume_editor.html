@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Resume{% endblock %}
+
+{% block content %}
+<div class="resume-editor-container" style="max-width: 800px; margin: 0 auto;">
+  <div class="feed-head">
+    <h1>Edit Resume</h1>
+    <div class="head-actions">
+      <button class="btn" onclick="window.location.href='/resume'">Cancel</button>
+      <button class="btn btn-primary" onclick="saveResume()">Save Changes</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Name</label>
+    <input type="text" id="r-name" class="input" value="{{ resume.name | default('', true) }}">
+  </div>
+  
+  <div class="form-group">
+    <label>Title</label>
+    <input type="text" id="r-title" class="input" value="{{ resume.title | default('', true) }}">
+  </div>
+  
+  <h3>Contact</h3>
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+    <div class="form-group">
+      <label>Email</label>
+      <input type="text" id="r-email" class="input" value="{{ resume.contact.email if resume.contact else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Phone</label>
+      <input type="text" id="r-phone" class="input" value="{{ resume.contact.phone if resume.contact else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Location</label>
+      <input type="text" id="r-location" class="input" value="{{ resume.contact.location if resume.contact else '' }}">
+    </div>
+    <div class="form-group">
+      <label>Website</label>
+      <input type="text" id="r-website" class="input" value="{{ resume.contact.website if resume.contact else '' }}">
+    </div>
+  </div>
+
+  <h3>Summary (Markdown)</h3>
+  <div class="form-group">
+    <textarea id="r-content" class="input" rows="5" style="font-family:monospace;">{{ content }}</textarea>
+  </div>
+
+  <h3>Skills</h3>
+  <p class="muted" style="font-size:0.85rem;">Separate skills with commas.</p>
+  <div class="form-group">
+    <textarea id="r-skills" class="input" rows="3">{% if resume.skills %}{{ resume.skills | join(', ') }}{% endif %}</textarea>
+  </div>
+
+  <div class="feed-head" style="margin-top:2rem; align-items:center;">
+    <h3 style="margin:0;">Experience</h3>
+    <button class="btn head-action" onclick="addExp()">+ Add Role</button>
+  </div>
+  <div id="experience-list" style="display:flex; flex-direction:column; gap:1.5rem; margin-top:1rem;"></div>
+
+  <div class="feed-head" style="margin-top:2rem; align-items:center;">
+    <h3 style="margin:0;">Education</h3>
+    <button class="btn head-action" onclick="addEdu()">+ Add Degree</button>
+  </div>
+  <div id="education-list" style="display:flex; flex-direction:column; gap:1.5rem; margin-top:1rem;"></div>
+
+  <div style="margin-top:2rem; text-align:right;">
+    <button class="btn btn-primary" onclick="saveResume()">Save Changes</button>
+  </div>
+</div>
+
+<script>
+const initExp = {{ (resume.experience or []) | tojson }};
+const initEdu = {{ (resume.education or []) | tojson }};
+
+function addExp(exp = {role: '', company: '', date: '', details: ''}) {
+  const container = document.createElement('div');
+  container.className = 'exp-item';
+  container.style = 'border:1px solid var(--border); padding:1rem; border-radius:8px; background:var(--bg-alt); position:relative;';
+  
+  container.innerHTML = `
+    <button class="btn btn-sm btn-ghost" style="position:absolute; top:0.5rem; right:0.5rem;" onclick="this.parentElement.remove()">✕</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:1rem;">
+      <div class="form-group" style="margin:0;">
+        <label style="font-size:0.8rem;">Role</label>
+        <input type="text" class="input exp-role" value="${escapeHtml(exp.role)}">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label style="font-size:0.8rem;">Company</label>
+        <input type="text" class="input exp-company" value="${escapeHtml(exp.company)}">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label style="font-size:0.8rem;">Date (e.g. 2020 - Present)</label>
+        <input type="text" class="input exp-date" value="${escapeHtml(exp.date)}">
+      </div>
+    </div>
+    <div class="form-group" style="margin:0;">
+      <label style="font-size:0.8rem;">Details (Markdown)</label>
+      <textarea class="input exp-details" rows="3">${escapeHtml(exp.details)}</textarea>
+    </div>
+  `;
+  document.getElementById('experience-list').appendChild(container);
+}
+
+function addEdu(edu = {degree: '', school: '', date: ''}) {
+  const container = document.createElement('div');
+  container.className = 'edu-item';
+  container.style = 'border:1px solid var(--border); padding:1rem; border-radius:8px; background:var(--bg-alt); position:relative;';
+  
+  container.innerHTML = `
+    <button class="btn btn-sm btn-ghost" style="position:absolute; top:0.5rem; right:0.5rem;" onclick="this.parentElement.remove()">✕</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin:0;">
+      <div class="form-group" style="margin:0;">
+        <label style="font-size:0.8rem;">Degree / Course</label>
+        <input type="text" class="input edu-degree" value="${escapeHtml(edu.degree)}">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label style="font-size:0.8rem;">School / Institution</label>
+        <input type="text" class="input edu-school" value="${escapeHtml(edu.school)}">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label style="font-size:0.8rem;">Date (e.g. 2016 - 2020)</label>
+        <input type="text" class="input edu-date" value="${escapeHtml(edu.date)}">
+      </div>
+    </div>
+  `;
+  document.getElementById('education-list').appendChild(container);
+}
+
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return (unsafe + '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initExp.forEach(addExp);
+  initEdu.forEach(addEdu);
+});
+
+async function saveResume() {
+  const metadata = {
+    name: document.getElementById('r-name').value.trim(),
+    title: document.getElementById('r-title').value.trim(),
+    contact: {
+      email: document.getElementById('r-email').value.trim(),
+      phone: document.getElementById('r-phone').value.trim(),
+      location: document.getElementById('r-location').value.trim(),
+      website: document.getElementById('r-website').value.trim(),
+    },
+    skills: document.getElementById('r-skills').value.split(',').map(s => s.trim()).filter(s => s),
+    experience: Array.from(document.querySelectorAll('.exp-item')).map(item => ({
+      role: item.querySelector('.exp-role').value.trim(),
+      company: item.querySelector('.exp-company').value.trim(),
+      date: item.querySelector('.exp-date').value.trim(),
+      details: item.querySelector('.exp-details').value.trim()
+    })),
+    education: Array.from(document.querySelectorAll('.edu-item')).map(item => ({
+      degree: item.querySelector('.edu-degree').value.trim(),
+      school: item.querySelector('.edu-school').value.trim(),
+      date: item.querySelector('.edu-date').value.trim()
+    }))
+  };
+
+  const payload = {
+    metadata: metadata,
+    content: document.getElementById('r-content').value
+  };
+
+  const res = await fetch('/resume/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+
+  if(res.ok) {
+    window.location.href = '/resume';
+  } else {
+    alert("Failed to save resume.");
+  }
+}
+</script>
+{% endblock %}

@@ -204,6 +204,9 @@ async def home(request: Request):
         {"icon": "📕", "app": "dictionary", "title": "Dictionary", "href": "/dictionary",
          "desc": "Personal dictionary to store words, phrases, and descriptions.",
          "count": len(dict_db.get_words())},
+        {"icon": "👔", "app": "resume", "title": "Resume", "href": "/resume",
+         "desc": "Interactive CV with daily skill updates and PDF export.",
+         "count": 1},
     ]
     return templates.TemplateResponse(request, "home.html", {"features": features})
 
@@ -2002,4 +2005,54 @@ async def delete_dictionary_entry(dict_id: int):
     if not success:
         raise HTTPException(404, "Entry not found")
     return {"status": "success"}
+
+# --------------------------------------------------------------------------- #
+# Resume
+# --------------------------------------------------------------------------- #
+import frontmatter as _fm
+
+RESUME_PATH = POSTS_DIR.parent / "resume" / "resume.md"
+
+@app.get("/resume", response_class=HTMLResponse)
+async def resume_view(request: Request):
+    if not RESUME_PATH.exists():
+        RESUME_PATH.parent.mkdir(exist_ok=True)
+        RESUME_PATH.write_text("---\nname: Your Name\n---\nBio", encoding="utf-8")
+    
+    fm = _fm.load(RESUME_PATH)
+    content_html, _ = render_with_toc(fm.content)
+    return templates.TemplateResponse(
+        request, "resume.html", {"resume": fm.metadata, "content_html": content_html}
+    )
+
+@app.get("/resume/edit", response_class=HTMLResponse)
+async def resume_edit_form(request: Request):
+    if not RESUME_PATH.exists():
+        RESUME_PATH.parent.mkdir(exist_ok=True)
+        RESUME_PATH.write_text("---\nname: Your Name\n---\nBio", encoding="utf-8")
+    
+    fm = _fm.load(RESUME_PATH)
+    return templates.TemplateResponse(
+        request, "resume_editor.html", {"resume": fm.metadata, "content": fm.content}
+    )
+
+@app.post("/resume/save")
+async def resume_save(request: Request):
+    data = await request.json()
+    metadata = data.get("metadata", {})
+    content = data.get("content", "")
+    
+    post = _fm.Post(content, **metadata)
+    RESUME_PATH.write_text(_fm.dumps(post), encoding="utf-8")
+    return {"ok": True}
+
+@app.get("/resume/export.md")
+async def resume_export_md():
+    if not RESUME_PATH.exists():
+        raise HTTPException(404)
+    return FileResponse(
+        path=RESUME_PATH, 
+        filename="resume.md",
+        media_type="text/markdown"
+    )
 

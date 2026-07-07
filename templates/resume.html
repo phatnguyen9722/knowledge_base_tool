@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Resume | {{ resume.name }}{% endblock %}
+
+{% block content %}
+<div class="resume-container">
+  <div class="resume-actions print-hide">
+    <a href="/resume/edit" class="btn btn-primary">Edit Resume</a>
+    <a href="/resume/export.md" class="btn" download>Export MD</a>
+    <button onclick="window.print()" class="btn">Export PDF</button>
+  </div>
+
+  <div class="resume-paper">
+    <header class="resume-header">
+      <h1>{{ resume.name }}</h1>
+      {% if resume.title %}<h2>{{ resume.title }}</h2>{% endif %}
+      
+      {% if resume.contact %}
+      <div class="resume-contact">
+        {% if resume.contact.email %}<span>{{ resume.contact.email }}</span>{% endif %}
+        {% if resume.contact.phone %}<span>{{ resume.contact.phone }}</span>{% endif %}
+        {% if resume.contact.location %}<span>{{ resume.contact.location }}</span>{% endif %}
+        {% if resume.contact.website %}<span><a href="{{ resume.contact.website }}" target="_blank">{{ resume.contact.website }}</a></span>{% endif %}
+      </div>
+      {% endif %}
+    </header>
+
+    {% if content_html %}
+    <section class="resume-section">
+      <h3>Summary</h3>
+      <div class="resume-content">
+        {{ content_html | safe }}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if resume.skills %}
+    <section class="resume-section">
+      <h3>Skills</h3>
+      <ul class="resume-skills">
+        {% for skill in resume.skills %}
+          <li>{{ skill }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if resume.experience %}
+    <section class="resume-section">
+      <h3>Experience</h3>
+      <div class="resume-items">
+        {% for exp in resume.experience %}
+        <div class="resume-item">
+          <div class="resume-item-head">
+            <span class="resume-role">{{ exp.role }}</span>
+            <span class="resume-date">{{ exp.date }}</span>
+          </div>
+          <div class="resume-company">{{ exp.company }}</div>
+          {% if exp.details %}
+          <div class="resume-details">{{ exp.details }}</div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    {% if resume.education %}
+    <section class="resume-section">
+      <h3>Education</h3>
+      <div class="resume-items">
+        {% for edu in resume.education %}
+        <div class="resume-item">
+          <div class="resume-item-head">
+            <span class="resume-role">{{ edu.degree }}</span>
+            <span class="resume-date">{{ edu.date }}</span>
+          </div>
+          <div class="resume-company">{{ edu.school }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

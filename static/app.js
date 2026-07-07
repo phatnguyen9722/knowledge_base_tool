@@ -14,6 +14,7 @@ var FEATURE_LIST = [
   { app: "music",     label: "Music",     desc: "Tracks & playlists" },
   { app: "notes",     label: "Notes",     desc: "Quick pinnable notes" },
   { app: "posts",     label: "Posts",     desc: "Notes & articles" },
+  { app: "resume",    label: "Resume",    desc: "Interactive CV & Skills" },
   { app: "series",    label: "Series",    desc: "Multi-part topics" },
   { app: "tasks",     label: "Tasks",     desc: "Versioned tasks" },
   { app: "toeic",     label: "TOEIC",     desc: "Practice sets" },
@@ -30,13 +31,14 @@ var APP_ICONS_DEFAULT = {
   "bookmarks": "🔖",
   "tasks":     "✅",
   "emails":    "✉️",
-  "dictionary":"📕"
+  "dictionary":"📕",
+  "resume":    "👔"
 };
 var APP_LABELS = {
   "posts": "Posts", "series": "Series", "books": "Books",
   "toeic": "TOEIC", "music": "Music", "notes": "Notes",
   "api-docs": "API Docs", "bookmarks": "Bookmarks", "tasks": "Tasks",
-  "emails": "Email", "dictionary": "Dictionary"
+  "emails": "Email", "dictionary": "Dictionary", "resume": "Resume"
 };
 
 (function () {
