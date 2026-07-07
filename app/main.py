@@ -168,47 +168,121 @@ def _build_url(
 # --------------------------------------------------------------------------- #
 # Homepage — feature boxes
 # --------------------------------------------------------------------------- #
+import json
+LANG_PATH = _settings.db_path.parent / "language.json"
+
+VI_LANG = {
+    "title_main": "Cơ Sở Dữ Liệu",
+    "title_sub": "Mọi thứ tại một nơi — chọn một mục để bắt đầu.",
+    "apps": {
+        "posts": {"title": "Bài Viết", "desc": "Ghi chú & bài viết với thẻ tag và tìm kiếm."},
+        "series": {"title": "Chuỗi Bài", "desc": "Các chủ đề nhiều phần liên kết theo thứ tự."},
+        "books": {"title": "Sách", "desc": "Bộ sưu tập các chương — tiểu thuyết & bài dài."},
+        "toeic": {"title": "TOEIC", "desc": "Bộ đề thi với đáp án radio & giải thích."},
+        "music": {"title": "Âm Nhạc", "desc": "Bản nhạc với siêu dữ liệu có thể chỉnh sửa."},
+        "notes": {"title": "Ghi Chú Nhanh", "desc": "Ghi chú dạng hộp; ghim mục yêu thích."},
+        "api-docs": {"title": "Tài Liệu API", "desc": "Tài liệu REST API — dự án, endpoints, params."},
+        "bookmarks": {"title": "Dấu Trang", "desc": "Liên kết đã lưu được tổ chức theo thẻ."},
+        "tasks": {"title": "Nhiệm Vụ", "desc": "Theo dõi công việc với các nhiệm vụ con."},
+        "emails": {"title": "Soạn Email", "desc": "Soạn và dự thảo email dựa trên mẫu."},
+        "dictionary": {"title": "Từ Điển", "desc": "Từ điển cá nhân lưu từ vựng, cụm từ."},
+        "resume": {"title": "Hồ Sơ (CV)", "desc": "CV tương tác cập nhật hàng ngày & xuất PDF."}
+    }
+}
+
+def get_language_dict():
+    if not LANG_PATH.exists():
+        return {"mode": "ENG", "dict": {}}
+    try:
+        config = json.loads(LANG_PATH.read_text("utf-8"))
+        mode = config.get("mode", "ENG")
+        if mode == "VI":
+            return {"mode": mode, "dict": VI_LANG}
+        elif mode == "CUSTOM":
+            return {"mode": mode, "dict": config.get("custom", {})}
+        return {"mode": "ENG", "dict": {}}
+    except:
+        return {"mode": "ENG", "dict": {}}
+
+@app.get("/api/language")
+def get_language():
+    if not LANG_PATH.exists():
+        return {"mode": "ENG", "custom": {}}
+    try:
+        return json.loads(LANG_PATH.read_text("utf-8"))
+    except:
+        return {"mode": "ENG", "custom": {}}
+
+@app.post("/api/language")
+async def save_language(request: Request):
+    data = await request.json()
+    LANG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    LANG_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=2), "utf-8")
+    return {"status": "ok"}
+
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
+    lang_info = get_language_dict()
+    ldict = lang_info["dict"]
+    app_dict = ldict.get("apps", {})
+    
+    def get_app_text(app_id, default_title, default_desc):
+        a = app_dict.get(app_id, {})
+        return a.get("title", default_title), a.get("desc", default_desc)
+
+    title_posts, desc_posts = get_app_text("posts", "Posts", "Notes & articles with tags and full-text search.")
+    title_series, desc_series = get_app_text("series", "Series", "Multi-part topics linked in order.")
+    title_books, desc_books = get_app_text("books", "Books", "Collections of chapters — novels & long reads.")
+    title_toeic, desc_toeic = get_app_text("toeic", "TOEIC", "Practice sets with radio answers & explanations.")
+    title_music, desc_music = get_app_text("music", "Music", "Imported tracks with editable metadata.")
+    title_notes, desc_notes = get_app_text("notes", "Notes", "Quick notes shown as boxes; pin your favorites.")
+    title_api, desc_api = get_app_text("api-docs", "API Docs", "Document REST APIs — projects, endpoints, params, responses.")
+    title_bookmarks, desc_bookmarks = get_app_text("bookmarks", "Bookmarks", "Saved links organised by tags and category.")
+    title_tasks, desc_tasks = get_app_text("tasks", "Tasks", "Task tracking with subtasks and version history.")
+    title_emails, desc_emails = get_app_text("emails", "Email Composers", "Template-based email drafting and composing.")
+    title_dict, desc_dict = get_app_text("dictionary", "Dictionary", "Personal dictionary to store words, phrases, and descriptions.")
+    title_resume, desc_resume = get_app_text("resume", "Resume", "Interactive CV with daily skill updates and PDF export.")
+
     features = [
-        {"icon": "📝", "app": "posts",    "title": "Posts",    "href": "/posts",
-         "desc": "Notes & articles with tags and full-text search.",
+        {"icon": "📝", "app": "posts",    "title": title_posts,    "href": "/posts",
+         "desc": desc_posts,
          "count": len(pm.list(status=None))},
-        {"icon": "📚", "app": "series",   "title": "Series",   "href": "/series",
-         "desc": "Multi-part topics linked in order.",
+        {"icon": "📚", "app": "series",   "title": title_series,   "href": "/series",
+         "desc": desc_series,
          "count": len(pm.all_series())},
-        {"icon": "📖", "app": "books",    "title": "Books",    "href": "/books",
-         "desc": "Collections of chapters — novels & long reads.",
+        {"icon": "📖", "app": "books",    "title": title_books,    "href": "/books",
+         "desc": desc_books,
          "count": len(books.collections())},
-        {"icon": "🎧", "app": "toeic",    "title": "TOEIC",    "href": "/toeic",
-         "desc": "Practice sets with radio answers & explanations.",
+        {"icon": "🎧", "app": "toeic",    "title": title_toeic,    "href": "/toeic",
+         "desc": desc_toeic,
          "count": len(toeic.list())},
-        {"icon": "🎵", "app": "music",    "title": "Music",    "href": "/music",
-         "desc": "Imported tracks with editable metadata.",
+        {"icon": "🎵", "app": "music",    "title": title_music,    "href": "/music",
+         "desc": desc_music,
          "count": len(music.list())},
-        {"icon": "🗒️", "app": "notes",    "title": "Notes",    "href": "/notes",
-         "desc": "Quick notes shown as boxes; pin your favorites.",
+        {"icon": "🗒️", "app": "notes",    "title": title_notes,    "href": "/notes",
+         "desc": desc_notes,
          "count": len(notes.list())},
-        {"icon": "📄", "app": "api-docs",   "title": "API Docs",   "href": "/api-docs",
-         "desc": "Document REST APIs — projects, endpoints, params, responses.",
+        {"icon": "📄", "app": "api-docs",   "title": title_api,   "href": "/api-docs",
+         "desc": desc_api,
          "count": len(api_docs.list())},
-        {"icon": "🔖", "app": "bookmarks", "title": "Bookmarks", "href": "/bookmarks",
-         "desc": "Saved links organised by tags and category.",
+        {"icon": "🔖", "app": "bookmarks", "title": title_bookmarks, "href": "/bookmarks",
+         "desc": desc_bookmarks,
          "count": len(bmarks.list())},
-        {"icon": "✅", "app": "tasks", "title": "Tasks", "href": "/tasks",
-         "desc": "Task tracking with subtasks and version history.",
+        {"icon": "✅", "app": "tasks", "title": title_tasks, "href": "/tasks",
+         "desc": desc_tasks,
          "count": len(tasks_mgr.list())},
-        {"icon": "✉️", "app": "emails", "title": "Email Composers", "href": "/emails",
-         "desc": "Template-based email drafting and composing.",
+        {"icon": "✉️", "app": "emails", "title": title_emails, "href": "/emails",
+         "desc": desc_emails,
          "count": len(email_mgr.list())},
-        {"icon": "📕", "app": "dictionary", "title": "Dictionary", "href": "/dictionary",
-         "desc": "Personal dictionary to store words, phrases, and descriptions.",
+        {"icon": "📕", "app": "dictionary", "title": title_dict, "href": "/dictionary",
+         "desc": desc_dict,
          "count": len(dict_db.get_words())},
-        {"icon": "👔", "app": "resume", "title": "Resume", "href": "/resume",
-         "desc": "Interactive CV with daily skill updates and PDF export.",
+        {"icon": "👔", "app": "resume", "title": title_resume, "href": "/resume",
+         "desc": desc_resume,
          "count": 1},
     ]
-    return templates.TemplateResponse(request, "home.html", {"features": features})
+    return templates.TemplateResponse(request, "home.html", {"features": features, "lang": ldict})
+
 
 
 @app.get("/favicon.ico", include_in_schema=False)

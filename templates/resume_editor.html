@@ -74,7 +74,7 @@
 const initExp = {{ (resume.experience or []) | tojson }};
 const initEdu = {{ (resume.education or []) | tojson }};
 
-function addExp(exp = {role: '', company: '', date: '', details: ''}) {
+function addExp(exp = {role: '', company: '', date: '', project_desc: '', details: '', responsibilities: '', technologies: ''}) {
   const container = document.createElement('div');
   container.className = 'exp-item';
   container.style = 'border:1px solid var(--border); padding:1rem; border-radius:8px; background:var(--bg-alt); position:relative;';
@@ -95,9 +95,17 @@ function addExp(exp = {role: '', company: '', date: '', details: ''}) {
         <input type="text" class="input exp-date" value="${escapeHtml(exp.date)}">
       </div>
     </div>
+    <div class="form-group" style="margin:0 0 1rem 0;">
+      <label style="font-size:0.8rem;">Project Description</label>
+      <input type="text" class="input exp-desc" value="${escapeHtml(exp.project_desc || '')}">
+    </div>
+    <div class="form-group" style="margin:0 0 1rem 0;">
+      <label style="font-size:0.8rem;">Responsibilities (Markdown)</label>
+      <textarea class="input exp-responsibilities" rows="3">${escapeHtml(exp.responsibilities || exp.details || '')}</textarea>
+    </div>
     <div class="form-group" style="margin:0;">
-      <label style="font-size:0.8rem;">Details (Markdown)</label>
-      <textarea class="input exp-details" rows="3">${escapeHtml(exp.details)}</textarea>
+      <label style="font-size:0.8rem;">Technologies (Comma-separated)</label>
+      <input type="text" class="input exp-technologies" value="${escapeHtml(exp.technologies || '')}">
     </div>
   `;
   document.getElementById('experience-list').appendChild(container);
@@ -153,7 +161,11 @@ async function saveResume() {
       role: item.querySelector('.exp-role').value.trim(),
       company: item.querySelector('.exp-company').value.trim(),
       date: item.querySelector('.exp-date').value.trim(),
-      details: item.querySelector('.exp-details').value.trim()
+      project_desc: item.querySelector('.exp-desc').value.trim(),
+      responsibilities: item.querySelector('.exp-responsibilities').value.trim(),
+      technologies: item.querySelector('.exp-technologies').value.trim(),
+      // Keep details mapped to responsibilities for backward compatibility
+      details: item.querySelector('.exp-responsibilities').value.trim()
     })),
     education: Array.from(document.querySelectorAll('.edu-item')).map(item => ({
       degree: item.querySelector('.edu-degree').value.trim(),

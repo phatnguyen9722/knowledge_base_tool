@@ -106,6 +106,7 @@
     {% if not request.url.path.startswith('/toeic') %}<a class="btn" data-feature-app="toeic" data-header-app="toeic" href="/toeic"><span class="app-icon" data-app="toeic">🎧</span> TOEIC</a>{% endif %}
     {% if not request.url.path.startswith('/series') %}<a class="btn" data-feature-app="series" data-header-app="series" href="/series"><span class="app-icon" data-app="series">📚</span> Series</a>{% endif %}
     {% if not request.url.path.startswith('/dictionary') %}<a class="btn" data-feature-app="dictionary" data-header-app="dictionary" href="/dictionary"><span class="app-icon" data-app="dictionary">📕</span> Dictionary</a>{% endif %}
+    {% if not request.url.path.startswith('/resume') %}<a class="btn" data-feature-app="resume" data-header-app="resume" href="/resume"><span class="app-icon" data-app="resume">👔</span> Resume</a>{% endif %}
     {% endblock %}
     <!-- Fixed right-side controls — never move regardless of feature visibility -->
     <div class="topbar-fixed">
@@ -135,12 +136,44 @@
         <button class="settings-nav-item" data-panel="icon-library">Icon Library</button>
         <button class="settings-nav-item" data-panel="background">Background</button>
         <button class="settings-nav-item" data-panel="fonts">Typography</button>
+        <button class="settings-nav-item" data-panel="language">Language</button>
       </nav>
 
       <!-- RIGHT: content panels (only one shown at a time) -->
       <div class="settings-content">
 
-
+        <!-- Language panel -->
+        <div class="settings-panel" id="panel-language" hidden>
+          <h3 class="settings-panel-title">Language & Localization</h3>
+          <p class="muted settings-panel-desc">
+            Change the language for app names and descriptions. If you select Custom, you can define your own titles.
+          </p>
+          <div class="form-group" style="margin-top: 1rem;">
+            <label>Mode</label>
+            <select id="lang-mode-select" class="input">
+              <option value="ENG">English (Default)</option>
+              <option value="VI">Tiếng Việt (Vietnamese)</option>
+              <option value="CUSTOM">Custom</option>
+            </select>
+          </div>
+          <div id="lang-custom-editor" style="display: none; margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+            <h4>Main Titles</h4>
+            <div class="form-group">
+              <label>Knowledge Base (Main Title)</label>
+              <input type="text" id="lang-main-title" class="input">
+            </div>
+            <div class="form-group">
+              <label>Knowledge Base (Subtitle)</label>
+              <input type="text" id="lang-sub-title" class="input">
+            </div>
+            
+            <h4 style="margin-top: 1.5rem;">Apps</h4>
+            <div id="lang-custom-apps" style="display:flex; flex-direction:column; gap:1rem;"></div>
+          </div>
+          <div style="margin-top: 2rem;">
+            <button class="btn btn-primary" onclick="saveLanguageConfig()">Save Language</button>
+          </div>
+        </div>
 
         <!-- Features + Header Apps panel (merged, two-column) -->
         <div class="settings-panel" id="panel-features" hidden>
@@ -378,6 +411,34 @@
     if (!localStorage.getItem('kb-theme')) {
       localStorage.setItem('kb-theme', 'dracula');
     }
+    // Translate the global header links dynamically on page load based on localStorage
+    try {
+      var _lData = JSON.parse(localStorage.getItem("kb-language-data") || "{}");
+      var _cApps = _lData.mode === "VI" ? {
+          "posts": {title: "Bài Viết"}, "series": {title: "Chuỗi Bài"}, "books": {title: "Sách"},
+          "toeic": {title: "TOEIC"}, "music": {title: "Âm Nhạc"}, "notes": {title: "Ghi Chú Nhanh"},
+          "api-docs": {title: "Tài Liệu API"}, "bookmarks": {title: "Dấu Trang"}, "tasks": {title: "Nhiệm Vụ"},
+          "emails": {title: "Soạn Email"}, "dictionary": {title: "Từ Điển"}, "resume": {title: "Hồ Sơ (CV)"}
+      } : (_lData.custom && _lData.custom.apps ? _lData.custom.apps : {});
+      
+      if (_lData.mode === "VI" || _lData.mode === "CUSTOM") {
+        document.querySelectorAll('[data-header-app]').forEach(function(el) {
+          var app = el.getAttribute("data-header-app");
+          if (_cApps[app] && _cApps[app].title) {
+            var iconEl = el.querySelector(".app-icon");
+            el.innerHTML = "";
+            if (iconEl) el.appendChild(iconEl);
+            el.appendChild(document.createTextNode(" " + _cApps[app].title));
+          }
+        });
+        
+        var tMain = _lData.mode === "VI" ? "Cơ Sở Dữ Liệu" : (_lData.custom ? _lData.custom.title_main : null);
+        if (tMain) {
+           var brand = document.querySelector(".brand");
+           if (brand) brand.textContent = "📚 " + tMain;
+        }
+      }
+    } catch(e) {}
   </script>
   {% block scripts %}{% endblock %}
 </body>

@@ -41,6 +41,36 @@ var APP_LABELS = {
   "emails": "Email", "dictionary": "Dictionary", "resume": "Resume"
 };
 
+try {
+  var _langData = JSON.parse(localStorage.getItem("kb-language-data") || "{}");
+  var _customApps = (_langData.custom && _langData.custom.apps) ? _langData.custom.apps : {};
+  if (_langData.mode === "VI") {
+    var _vi = {
+        "posts": {"title": "Bài Viết", "desc": "Ghi chú & bài viết với thẻ tag và tìm kiếm."},
+        "series": {"title": "Chuỗi Bài", "desc": "Các chủ đề nhiều phần liên kết theo thứ tự."},
+        "books": {"title": "Sách", "desc": "Bộ sưu tập các chương — tiểu thuyết & bài dài."},
+        "toeic": {"title": "TOEIC", "desc": "Bộ đề thi với đáp án radio & giải thích."},
+        "music": {"title": "Âm Nhạc", "desc": "Bản nhạc với siêu dữ liệu có thể chỉnh sửa."},
+        "notes": {"title": "Ghi Chú Nhanh", "desc": "Ghi chú dạng hộp; ghim mục yêu thích."},
+        "api-docs": {"title": "Tài Liệu API", "desc": "Tài liệu REST API — dự án, endpoints, params."},
+        "bookmarks": {"title": "Dấu Trang", "desc": "Liên kết đã lưu được tổ chức theo thẻ."},
+        "tasks": {"title": "Nhiệm Vụ", "desc": "Theo dõi công việc với các nhiệm vụ con."},
+        "emails": {"title": "Soạn Email", "desc": "Soạn và dự thảo email dựa trên mẫu."},
+        "dictionary": {"title": "Từ Điển", "desc": "Từ điển cá nhân lưu từ vựng, cụm từ."},
+        "resume": {"title": "Hồ Sơ (CV)", "desc": "CV tương tác cập nhật hàng ngày & xuất PDF."}
+    };
+    _customApps = _vi;
+  }
+  if (_langData.mode === "VI" || _langData.mode === "CUSTOM") {
+    FEATURE_LIST.forEach(function(f) {
+      if (_customApps[f.app]) {
+        if (_customApps[f.app].title) { f.label = _customApps[f.app].title; APP_LABELS[f.app] = f.label; }
+        if (_customApps[f.app].desc) f.desc = _customApps[f.app].desc;
+      }
+    });
+  }
+} catch (e) {}
+
 (function () {
   "use strict";
 
@@ -150,6 +180,7 @@ var APP_LABELS = {
     if (id === "icon-library") loadIconLibrary();
     if (id === "background")   loadBgPanel();
     if (id === "appearance")   buildAppearancePanel();
+    if (id === "language")     buildLanguagePanel();
   }
 
   // Wire sidebar nav items
@@ -1635,4 +1666,86 @@ function _applyAppColors() {
   });
   var styleTag = document.getElementById("app-color-style");
   if (styleTag) styleTag.textContent = css3;
+}
+
+// --- Language Localization Logic ---
+function buildLanguagePanel() {
+  var modeSelect = document.getElementById("lang-mode-select");
+  var customEditor = document.getElementById("lang-custom-editor");
+  if (!modeSelect || !customEditor) return;
+
+  fetch("/api/language").then(res => res.json()).then(data => {
+    modeSelect.value = data.mode || "ENG";
+    
+    // Toggle editor visibility
+    var toggleEditor = () => {
+      if (modeSelect.value === "CUSTOM") {
+        customEditor.style.display = "block";
+      } else {
+        customEditor.style.display = "none";
+      }
+    };
+    modeSelect.addEventListener("change", toggleEditor);
+    toggleEditor();
+
+    // Populate titles
+    var custom = data.custom || {};
+    document.getElementById("lang-main-title").value = custom.title_main || "Knowledge Base";
+    document.getElementById("lang-sub-title").value = custom.title_sub || "Everything in one place — pick a section to get started.";
+
+    // Populate Apps
+    var appsDiv = document.getElementById("lang-custom-apps");
+    var cApps = custom.apps || {};
+    appsDiv.innerHTML = FEATURE_LIST.map(f => {
+      var a = cApps[f.app] || {};
+      return `
+        <div style="border: 1px solid var(--border); padding: 0.75rem; border-radius: 6px; background: var(--bg-alt);">
+          <strong style="display:block; margin-bottom: 0.5rem; font-size: 0.95rem;">${f.label} (${f.app})</strong>
+          <div style="display:grid; grid-template-columns: 1fr 2fr; gap: 1rem;">
+            <div class="form-group" style="margin:0;">
+              <label style="font-size: 0.8rem;">Title</label>
+              <input type="text" class="input lang-app-title" data-app="${f.app}" value="${a.title || f.label}">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label style="font-size: 0.8rem;">Description</label>
+              <input type="text" class="input lang-app-desc" data-app="${f.app}" value="${a.desc || f.desc}">
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  });
+}
+
+function saveLanguageConfig() {
+  var mode = document.getElementById("lang-mode-select").value;
+  var custom = { apps: {} };
+
+  if (mode === "CUSTOM") {
+    custom.title_main = document.getElementById("lang-main-title").value.trim();
+    custom.title_sub = document.getElementById("lang-sub-title").value.trim();
+
+    document.querySelectorAll(".lang-app-title").forEach(inp => {
+      var appId = inp.getAttribute("data-app");
+      if (!custom.apps[appId]) custom.apps[appId] = {};
+      custom.apps[appId].title = inp.value.trim();
+    });
+    
+    document.querySelectorAll(".lang-app-desc").forEach(inp => {
+      var appId = inp.getAttribute("data-app");
+      if (!custom.apps[appId]) custom.apps[appId] = {};
+      custom.apps[appId].desc = inp.value.trim();
+    });
+  }
+
+  fetch("/api/language", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mode: mode, custom: custom })
+  }).then(res => {
+    if(res.ok) {
+      localStorage.setItem("kb-language-data", JSON.stringify({ mode: mode, custom: custom }));
+      window.location.reload();
+    }
+  });
 }

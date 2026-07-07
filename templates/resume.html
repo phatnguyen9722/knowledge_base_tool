@@ -67,8 +67,22 @@
             <span class="resume-date">{{ exp.date }}</span>
           </div>
           <div class="resume-company">{{ exp.company }}</div>
-          {% if exp.details %}
-          <div class="resume-details">{{ exp.details }}</div>
+          {% if exp.project_desc %}
+          <div class="resume-project-desc" style="font-style:italic; margin-bottom:0.5rem; font-size:0.95rem;">
+            {{ exp.project_desc }}
+          </div>
+          {% endif %}
+          
+          {% set resp = exp.responsibilities if exp.responsibilities else exp.details %}
+          {% if resp %}
+          <div class="resume-details"><strong style="display:block; margin-bottom:0.25rem;">Responsibilities:</strong>{{ resp }}</div>
+          {% endif %}
+          
+          {% if exp.technologies %}
+          <div class="resume-technologies" style="display:block; margin-top:0.5rem; font-size:0.9rem;">
+            <strong style="display:block; margin-bottom:0.25rem;">Technologies:</strong>
+            {{ exp.technologies }}
+          </div>
           {% endif %}
         </div>
         {% endfor %}
