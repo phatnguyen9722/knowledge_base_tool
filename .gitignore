@@ -13,6 +13,14 @@ venv/
 # OS / editor
 .DS_Store
 
+# Configuration
+.env
+dockerise/.env
+
+# Sync and Backup Data
+kb_sync/
+kb_backup/
+
 # pytest
 .pytest_cache/
 

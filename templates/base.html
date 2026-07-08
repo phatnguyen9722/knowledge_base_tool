@@ -139,6 +139,7 @@
         <button class="settings-nav-item" data-panel="fonts">Typography</button>
         <button class="settings-nav-item" data-panel="language">Language</button>
         <button class="settings-nav-item" data-panel="security">Security</button>
+        <button class="settings-nav-item" data-panel="sync">Sync</button>
       </nav>
 
       <!-- RIGHT: content panels (only one shown at a time) -->
@@ -404,6 +405,41 @@
           
           <div style="text-align: right; margin-top: 1rem;">
             <button class="btn btn-primary" id="save-security-btn">Save Security Settings</button>
+          </div>
+        </div>
+
+        <!-- Sync panel -->
+        <div class="settings-panel" id="panel-sync" hidden>
+          <h3 class="settings-panel-title">Synchronization</h3>
+          <p class="muted settings-panel-desc">Sync your Notes, Posts, Tasks, and Vault with your external directory.</p>
+          
+          <div class="form-group" style="margin-top: 1rem; margin-bottom: 1.5rem;">
+            <p><strong>Sync Folder:</strong> Mapped to <code>/sync</code></p>
+            <p><strong>Backup Folder:</strong> Mapped to <code>/backup</code></p>
+            <p class="muted" style="font-size:0.85rem; margin-top:.5rem;">(These paths are automatically configured by Docker and your setup script.)</p>
+          </div>
+          
+          <div style="display:flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+            <button class="btn" id="backup-now-btn" style="background: var(--secondary); color: white;">Backup Now</button>
+          </div>
+
+          <hr style="border:0; border-top:1px solid var(--border); margin:1.5rem 0;">
+
+          <h4 style="margin-bottom: 1rem; margin-top: 0;">Perform Sync</h4>
+          <div style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+            <button class="btn" id="scan-sync-btn">Scan Sync</button>
+            <button class="btn" id="initial-setup-btn" style="background: var(--danger); color: white; border-color: var(--danger);" title="Forcefully copy all local files to the remote Sync Folder, overwriting anything there.">Force Push All (Initial Setup)</button>
+          </div>
+
+          <div id="sync-preview-container" style="display:none; border: 1px solid var(--border); border-radius: 6px; padding: 1rem; max-height: 250px; overflow-y: auto; margin-bottom: 1rem;">
+            <h4 style="margin-top: 0;">Sync Preview</h4>
+            <ul id="sync-preview-list" style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem;">
+            </ul>
+            <p id="sync-preview-empty" class="muted" style="display:none;">Everything is up to date!</p>
+          </div>
+
+          <div style="text-align: right;">
+            <button class="btn btn-primary" id="execute-sync-btn" style="display:none; background: var(--success); color: white; border-color: var(--success);">Execute Sync Now</button>
           </div>
         </div>
 

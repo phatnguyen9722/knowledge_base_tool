@@ -1831,3 +1831,141 @@ document.addEventListener("DOMContentLoaded", function() {
     setTimeout(() => lockPwdInput.focus(), 100);
   }
 });
+
+// --- Sync Mechanism ---
+document.addEventListener("DOMContentLoaded", function() {
+  const scanSyncBtn = document.getElementById("scan-sync-btn");
+  const executeSyncBtn = document.getElementById("execute-sync-btn");
+  const syncPreviewContainer = document.getElementById("sync-preview-container");
+  const syncPreviewList = document.getElementById("sync-preview-list");
+  const syncPreviewEmpty = document.getElementById("sync-preview-empty");
+  const backupNowBtn = document.getElementById("backup-now-btn");
+  const initialSetupBtn = document.getElementById("initial-setup-btn");
+
+  if (!scanSyncBtn) return;
+
+  // Scan Sync
+  scanSyncBtn.addEventListener("click", function() {
+    const origText = scanSyncBtn.textContent;
+    scanSyncBtn.textContent = "Scanning...";
+    syncPreviewContainer.style.display = "block";
+    syncPreviewList.innerHTML = "<li>Loading...</li>";
+    syncPreviewEmpty.style.display = "none";
+    executeSyncBtn.style.display = "none";
+
+    fetch("/api/sync/preview").then(r => r.json()).then(data => {
+      scanSyncBtn.textContent = origText;
+      syncPreviewList.innerHTML = "";
+      
+      if (data.status === "error") {
+        syncPreviewList.innerHTML = `<li style="color:var(--danger)">Error: ${data.message}</li>`;
+        return;
+      }
+
+      const diffs = data.diffs;
+      if (diffs.length === 0) {
+        syncPreviewEmpty.style.display = "block";
+      } else {
+        diffs.forEach(diff => {
+          const li = document.createElement("li");
+          let actionText = "";
+          let color = "";
+          if (diff.action === "push") {
+            actionText = "⬆️ Push to Remote";
+            color = "var(--primary)";
+          } else {
+            actionText = "⬇️ Fetch to Local";
+            color = "var(--success)";
+          }
+          li.innerHTML = `<strong style="color:${color}">${actionText}</strong>: [${diff.category}] ${diff.rel_path} <span class="muted">(${diff.reason})</span>`;
+          syncPreviewList.appendChild(li);
+        });
+        executeSyncBtn.style.display = "inline-block";
+        executeSyncBtn.textContent = `Execute Sync Now (${diffs.length} items)`;
+      }
+    }).catch(e => {
+      scanSyncBtn.textContent = origText;
+      syncPreviewList.innerHTML = `<li style="color:var(--danger)">Network error while scanning.</li>`;
+    });
+  });
+
+  // Execute Sync
+  executeSyncBtn.addEventListener("click", function() {
+    const origText = executeSyncBtn.textContent;
+    executeSyncBtn.textContent = "Syncing...";
+    executeSyncBtn.disabled = true;
+
+    fetch("/api/sync/execute", { method: "POST" })
+      .then(r => r.json())
+      .then(data => {
+        executeSyncBtn.disabled = false;
+        if (data.status === "error") {
+          alert("Sync Failed: " + data.message);
+          executeSyncBtn.textContent = origText;
+        } else {
+          alert(`Sync Complete! Pushed ${data.pushed} files, Fetched ${data.pulled} files.`);
+          executeSyncBtn.style.display = "none";
+          scanSyncBtn.click(); // Re-scan to verify
+        }
+      })
+      .catch(e => {
+        executeSyncBtn.disabled = false;
+        executeSyncBtn.textContent = origText;
+        alert("Network error while executing sync.");
+      });
+  });
+
+  // Initial Setup
+  if (initialSetupBtn) {
+    initialSetupBtn.addEventListener("click", function() {
+      if (!confirm("WARNING: This will forcefully copy ALL your local files to the remote Sync Folder, overwriting any existing files there. Are you sure you want to proceed?")) return;
+      
+      const origText = initialSetupBtn.textContent;
+      initialSetupBtn.textContent = "Pushing...";
+      initialSetupBtn.disabled = true;
+
+      fetch("/api/sync/setup", { method: "POST" })
+        .then(r => r.json())
+        .then(data => {
+          initialSetupBtn.disabled = false;
+          initialSetupBtn.textContent = origText;
+          if (data.status === "error") {
+            alert("Initial Setup Failed: " + data.message);
+          } else {
+            alert(`Initial Setup Complete! Pushed ${data.pushed} files to the remote sync folder.`);
+          }
+        })
+        .catch(e => {
+          initialSetupBtn.disabled = false;
+          initialSetupBtn.textContent = origText;
+          alert("Network error while pushing setup.");
+        });
+    });
+  }
+
+  // Backup Now
+  if (backupNowBtn) {
+    backupNowBtn.addEventListener("click", function() {
+      const origText = backupNowBtn.textContent;
+      backupNowBtn.textContent = "Zipping...";
+      backupNowBtn.disabled = true;
+
+      fetch("/api/sync/backup", { method: "POST" })
+        .then(r => r.json())
+        .then(data => {
+          backupNowBtn.disabled = false;
+          backupNowBtn.textContent = origText;
+          if (data.status === "error") {
+            alert("Backup Failed: " + data.message);
+          } else {
+            alert(`Backup Complete! Saved to: ${data.file}`);
+          }
+        })
+        .catch(e => {
+          backupNowBtn.disabled = false;
+          backupNowBtn.textContent = origText;
+          alert("Network error while creating backup.");
+        });
+    });
+  }
+});

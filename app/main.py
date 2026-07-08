@@ -34,6 +34,7 @@ from .post_manager import PostManager
 from .tag_manager import TagManager
 from .tasks import TaskManager
 from .toeic import ToeicManager, parse_listening
+from .sync import get_sync_config, set_sync_config, get_sync_preview, execute_sync, execute_initial_setup, execute_backup
 
 # --------------------------------------------------------------------------- #
 # Settings (paths resolved for dev + PyInstaller bundle)
@@ -2214,3 +2215,48 @@ async def vault_api_rename_node(req: VaultRenameRequest):
         return {"status": "ok"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# --- Sync API Endpoints ---
+@app.get("/api/sync/config")
+async def api_get_sync_config():
+    config = get_sync_config(_settings)
+    return {"sync_dir": config.get("sync_dir", ""), "backup_dir": config.get("backup_dir", "")}
+
+class SyncConfigRequest(BaseModel):
+    sync_dir: str
+    backup_dir: str = ""
+
+@app.post("/api/sync/config")
+async def api_set_sync_config(req: SyncConfigRequest):
+    set_sync_config(_settings, req.sync_dir, req.backup_dir)
+    return {"status": "ok"}
+
+@app.get("/api/sync/preview")
+async def api_get_sync_preview():
+    try:
+        diffs = get_sync_preview(_settings)
+        return {"status": "ok", "diffs": diffs}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/sync/execute")
+async def api_execute_sync():
+    result = execute_sync(_settings)
+    if result["status"] == "error":
+        return {"status": "error", "message": result["message"]}
+    return result
+
+@app.post("/api/sync/setup")
+async def api_sync_setup():
+    result = execute_initial_setup(_settings)
+    if result["status"] == "error":
+        return {"status": "error", "message": result["message"]}
+    return result
+
+@app.post("/api/sync/backup")
+async def api_sync_backup():
+    result = execute_backup(_settings)
+    if result["status"] == "error":
+        return {"status": "error", "message": result["message"]}
+    return result
+

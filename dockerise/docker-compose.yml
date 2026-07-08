@@ -11,6 +11,8 @@ services:
       - "5050:5050"
     volumes:
       - kb-data:/data                      # named volume; persists all content
+      - ${SYNC_DIR:-../kb_sync}:/sync      # User's mapped sync folder
+      - ${BACKUP_DIR:-../kb_backup}:/backup # User's mapped backup folder
       # To use your existing local content instead, comment the line above and use:
       # - ../../posts:/data/posts
       # - ../../notes:/data/notes
