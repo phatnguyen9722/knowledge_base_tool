@@ -14,7 +14,7 @@ The app will be accessible at [http://localhost:5050](http://localhost:5050).
 
 ## Feature Overview
 
-Below is the overview of all 10 major features available in the system:
+Below is the overview of all 12 major features available in the system:
 
 ### 1. 📝 Posts
 * **Main Function**: Article and long-form note publisher.
@@ -55,3 +55,11 @@ Below is the overview of all 10 major features available in the system:
 ### 10. ✉️ Email Composers
 * **Main Function**: Template-based professional email compiler.
 * **Short Description**: Drafting tool with 8 pre-seeded business templates (welcome emails, follow-ups, outreach). Custom variables (e.g. `{{name}}`) are extracted into interactive form inputs, rendering real-time draft previews with copy actions and direct `mailto` desktop client launch.
+
+### 11. 📓 Vault
+* **Main Function**: Obsidian-like Markdown knowledge manager.
+* **Short Description**: Manage interconnected Markdown files in a hierarchical folder structure. Features a drag-and-drop file tree, live Markdown preview, an auto-generated Table of Contents pane, and inline context actions (rename, delete, move) to quickly organize knowledge bases locally.
+
+### 12. 🔒 Lock Screen
+* **Main Function**: Client-side privacy screen overlay.
+* **Short Description**: Prevent shoulder-surfing by securely locking the application interface. Users can set a custom password in Settings and instantly trigger a beautiful frosted-glass lock screen via a floating button. Keeps the session locked across page reloads until unlocked.
