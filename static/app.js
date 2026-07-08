@@ -1749,3 +1749,85 @@ function saveLanguageConfig() {
     }
   });
 }
+
+// --- Security & Lock Screen ---
+document.addEventListener("DOMContentLoaded", function() {
+  const securityPwdInput = document.getElementById("security-password");
+  const securityShowLockBtn = document.getElementById("security-show-lock-btn");
+  const saveSecurityBtn = document.getElementById("save-security-btn");
+  
+  const floatingLockBtn = document.getElementById("btn-floating-lock");
+  const lockScreen = document.getElementById("lock-screen");
+  const lockPwdInput = document.getElementById("lock-password-input");
+
+  // Load Settings
+  const securitySettings = JSON.parse(localStorage.getItem("kb-security") || "{}");
+  if (securityPwdInput) securityPwdInput.value = securitySettings.password || "";
+  if (securityShowLockBtn) securityShowLockBtn.checked = !!securitySettings.showLockBtn;
+  
+  // Apply Floating Lock Button visibility
+  function updateFloatingBtn() {
+    if (floatingLockBtn) {
+      floatingLockBtn.style.display = (securitySettings.showLockBtn && securitySettings.password) ? "flex" : "none";
+    }
+  }
+  updateFloatingBtn();
+
+  // Save Settings
+  if (saveSecurityBtn) {
+    saveSecurityBtn.addEventListener("click", function() {
+      securitySettings.password = securityPwdInput.value;
+      securitySettings.showLockBtn = securityShowLockBtn.checked;
+      localStorage.setItem("kb-security", JSON.stringify(securitySettings));
+      
+      updateFloatingBtn();
+      
+      const origText = saveSecurityBtn.textContent;
+      saveSecurityBtn.textContent = "Saved!";
+      setTimeout(() => { saveSecurityBtn.textContent = origText; }, 2000);
+    });
+  }
+
+  // Lock Logic
+  function lockApp() {
+    if (!securitySettings.password) return;
+    sessionStorage.setItem("kb-locked", "true");
+    lockScreen.classList.remove("hidden-lock");
+    lockPwdInput.value = "";
+    setTimeout(() => lockPwdInput.focus(), 100);
+  }
+
+  function unlockApp() {
+    if (lockPwdInput.value === securitySettings.password) {
+      sessionStorage.removeItem("kb-locked");
+      lockScreen.classList.add("hidden-lock");
+      lockPwdInput.classList.remove("error-shake");
+    } else {
+      lockPwdInput.classList.remove("error-shake");
+      // Trigger reflow to restart animation
+      void lockPwdInput.offsetWidth;
+      lockPwdInput.classList.add("error-shake");
+      lockPwdInput.value = "";
+      lockPwdInput.focus();
+    }
+  }
+
+  if (floatingLockBtn) {
+    floatingLockBtn.addEventListener("click", lockApp);
+  }
+
+  if (lockPwdInput) {
+    lockPwdInput.addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        unlockApp();
+      }
+    });
+  }
+
+  // Check if locked on load
+  if (sessionStorage.getItem("kb-locked") === "true" && securitySettings.password) {
+    lockScreen.classList.remove("hidden-lock");
+    setTimeout(() => lockPwdInput.focus(), 100);
+  }
+});

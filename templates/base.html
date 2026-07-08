@@ -138,6 +138,7 @@
         <button class="settings-nav-item" data-panel="background">Background</button>
         <button class="settings-nav-item" data-panel="fonts">Typography</button>
         <button class="settings-nav-item" data-panel="language">Language</button>
+        <button class="settings-nav-item" data-panel="security">Security</button>
       </nav>
 
       <!-- RIGHT: content panels (only one shown at a time) -->
@@ -382,6 +383,30 @@
           </div>
         </div>
 
+        <!-- Security panel -->
+        <div class="settings-panel" id="panel-security" hidden>
+          <h3 class="settings-panel-title">Security & Lock Screen</h3>
+          <p class="muted settings-panel-desc">Protect your knowledge base from shoulder-surfing.</p>
+          
+          <div class="form-group" style="margin-top: 1rem; margin-bottom: 1.5rem;">
+            <label style="display:block; margin-bottom:.5rem; font-weight:bold;">Lock Password</label>
+            <input type="password" id="security-password" class="input" placeholder="Enter a password to enable lock screen">
+            <p class="muted" style="font-size:0.85rem; margin-top:.25rem;">Leave empty to disable the lock screen.</p>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+              <input type="checkbox" id="security-show-lock-btn">
+              <span style="font-weight:bold;">Show Floating Lock Button</span>
+            </label>
+            <p class="muted" style="font-size:0.85rem; margin-top:.25rem;">Displays a '🔒' button at the bottom right of the screen to quickly lock the app.</p>
+          </div>
+          
+          <div style="text-align: right; margin-top: 1rem;">
+            <button class="btn btn-primary" id="save-security-btn">Save Security Settings</button>
+          </div>
+        </div>
+
         <div class="settings-footer">
           <button class="btn" id="settings-close">Close</button>
         </div>
@@ -406,6 +431,17 @@
   </div>
 
   <button id="to-top" class="to-top" title="Back to top" aria-label="Back to top">↑</button>
+
+  <!-- Lock Screen Overlay -->
+  <div id="lock-screen" class="hidden-lock">
+    <div class="lock-icon-large">🔒</div>
+    <div class="lock-form">
+      <input type="password" id="lock-password-input" placeholder="Enter password to unlock..." autofocus autocomplete="off">
+    </div>
+  </div>
+
+  <!-- Floating Lock Button -->
+  <button id="btn-floating-lock" style="display: none;" title="Lock App">🔒</button>
 
   <script src="/static/app.js?v={{ asset_v() }}"></script>
   <script>
