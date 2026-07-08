@@ -1,0 +1,677 @@
+{% extends "base.html" %}
+{% block title %}Vault{% endblock %}
+
+{% block sidebar %}
+<style>
+  /* Vault specific variables - Dracula Theme */
+  :root {
+    --vault-sidebar-bg: #21222c;
+    --vault-editor-bg: #282a36;
+    --vault-text: #f8f8f2;
+    --vault-border: #44475a;
+    --vault-accent: #bd93f9;
+    --vault-hover: #44475a;
+    --vault-active: #6272a4;
+  }
+  [data-theme="light"] {
+    /* Keep dracula even in light mode, or uncomment to support light mode:
+    --vault-sidebar-bg: #f8f9fa;
+    --vault-editor-bg: #ffffff;
+    --vault-text: #202124;
+    --vault-border: #e0e0e0;
+    --vault-accent: #5e35b1;
+    --vault-hover: #e8eaed;
+    --vault-active: #d2e3fc; */
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden; /* App-like full screen */
+  }
+  
+  /* OVERRIDE BASE LAYOUT */
+  .layout {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: calc(100vh - 60px); /* Approx topbar height */
+    gap: 0 !important;
+  }
+  .content {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  .sidebar {
+    display: none !important; /* Hide default sidebar */
+  }
+
+  /* Vault Layout */
+  .vault-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    background-color: var(--vault-editor-bg);
+    color: var(--vault-text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", Roboto, Helvetica, Arial, sans-serif;
+  }
+  
+  /* Sidebar */
+  .vault-sidebar {
+    width: 250px;
+    min-width: 200px;
+    background-color: var(--vault-sidebar-bg);
+    border-right: 1px solid var(--vault-border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: width 0.3s ease;
+  }
+  .vault-sidebar-header {
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--vault-border);
+  }
+  .vault-actions button {
+    background: none;
+    border: none;
+    color: var(--vault-text);
+    cursor: pointer;
+    opacity: 0.6;
+    font-size: 1rem;
+    padding: 0.3rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  .vault-actions button:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+  
+  /* Tree View */
+  .vault-tree {
+    padding: 0.5rem 0;
+    list-style: none;
+    margin: 0;
+  }
+  .vault-tree ul {
+    list-style: none;
+    padding-left: 1rem;
+    margin: 0;
+  }
+  .vault-node {
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    user-select: none;
+    color: var(--vault-text);
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    border-left: 2px solid transparent;
+  }
+  .vault-node:hover {
+    background-color: var(--vault-hover);
+  }
+  .vault-node.active {
+    background-color: var(--vault-active);
+    font-weight: 500;
+    border-left: 2px solid var(--vault-accent);
+    color: #fff;
+  }
+  .vault-node-title {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .vault-node-actions {
+    display: none;
+    margin-left: auto;
+    gap: 0.4rem;
+  }
+  .vault-node:hover .vault-node-actions {
+    display: flex;
+  }
+  .vault-node-actions button {
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.5;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+  }
+  .vault-node-actions button:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+  .vault-node.drag-over {
+    background-color: var(--vault-hover);
+    border: 1px dashed var(--vault-accent);
+  }
+  
+  /* Editor Area */
+  .vault-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .vault-toolbar {
+    height: 40px;
+    border-bottom: 1px solid var(--vault-border);
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    justify-content: space-between;
+  }
+  .vault-toolbar-title {
+    font-weight: 500;
+    opacity: 0.8;
+  }
+  .vault-split {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  .vault-pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+  }
+  .vault-toc-pane {
+    flex: 0 0 30%;
+    background: var(--vault-sidebar-bg);
+    border-left: 1px solid var(--vault-border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+    z-index: 10;
+  }
+  .vault-preview-pane {
+    flex: 0 0 50%;
+    background: var(--vault-sidebar-bg);
+    border-left: 1px solid var(--vault-border);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: -4px 0 15px rgba(0,0,0,0.1);
+    z-index: 20;
+  }
+  .vault-toc-pane[hidden], .vault-preview-pane[hidden] {
+    display: none;
+  }
+  .vault-pane-header {
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--vault-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .vault-toc {
+    padding: 1rem;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 0.85rem;
+  }
+  .vault-toc a {
+    display: block;
+    color: var(--vault-text);
+    text-decoration: none;
+    padding: 3px 0;
+    opacity: 0.8;
+  }
+  .vault-toc a:hover {
+    opacity: 1;
+    color: var(--vault-accent);
+  }
+  
+  /* Textarea Editor */
+  .vault-editor {
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--vault-text);
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', Consolas, Menlo, monospace;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    padding: 2.5rem 3rem;
+    resize: none;
+    outline: none;
+  }
+  
+  /* Preview */
+  .vault-preview {
+    flex: 1;
+    padding: 2.5rem 3rem;
+    overflow-y: auto;
+    font-family: inherit;
+    line-height: 1.7;
+  }
+  
+  .empty-state {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    opacity: 0.5;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vault-container">
+  <!-- Sidebar -->
+  <div class="vault-sidebar">
+    <div class="vault-sidebar-header">
+      Vault
+      <div class="vault-actions">
+        <button id="btn-new-file" title="New Note">📄</button>
+        <button id="btn-new-folder" title="New Folder">📁</button>
+      </div>
+    </div>
+    <div class="vault-tree" id="file-tree">
+      <!-- Tree rendered here by JS -->
+    </div>
+  </div>
+  
+  <!-- Main -->
+  <div class="vault-main">
+    <div class="vault-toolbar">
+      <div class="vault-toolbar-title" id="current-file-label" style="font-size: 0.95rem; letter-spacing: 0.5px;">No file selected</div>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <button class="btn btn-sm btn-ghost" id="btn-toggle-toc" style="display:none; transition: all 0.2s;">📑 TOC</button>
+        <button class="btn btn-sm btn-ghost" id="btn-toggle-preview" style="display:none; transition: all 0.2s;">👁️ Preview</button>
+        <button class="btn btn-sm btn-ghost" id="btn-delete" style="display:none; color:var(--danger); transition: all 0.2s;">Delete</button>
+      </div>
+    </div>
+    
+    <div class="vault-split" id="workspace" style="display:none;">
+      <!-- Editor -->
+      <div class="vault-pane">
+        <textarea class="vault-editor" id="editor" spellcheck="false"></textarea>
+      </div>
+      <!-- TOC Pane -->
+      <div class="vault-toc-pane" id="toc-pane" hidden>
+        <div class="vault-pane-header">
+           Table of Contents
+           <button class="btn-ghost" style="border:none; background:none; color:inherit; cursor:pointer;" onclick="document.getElementById('toc-pane').toggleAttribute('hidden')">✖</button>
+        </div>
+        <div class="vault-toc" id="toc-container"></div>
+      </div>
+      <!-- Preview Pane -->
+      <div class="vault-preview-pane" id="preview-pane" hidden>
+        <div class="vault-pane-header">
+           Preview
+           <button class="btn-ghost" style="border:none; background:none; color:inherit; cursor:pointer;" onclick="document.getElementById('preview-pane').toggleAttribute('hidden')">✖</button>
+        </div>
+        <div class="vault-preview markdown-body" id="preview"></div>
+      </div>
+    </div>
+    
+    <div class="empty-state" id="empty-state">
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📓</div>
+      <h2>Select or create a note</h2>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  let currentFile = null;
+  let saveTimeout = null;
+
+  const els = {
+    tree: document.getElementById('file-tree'),
+    editor: document.getElementById('editor'),
+    preview: document.getElementById('preview'),
+    workspace: document.getElementById('workspace'),
+    emptyState: document.getElementById('empty-state'),
+    fileLabel: document.getElementById('current-file-label'),
+    btnNewFile: document.getElementById('btn-new-file'),
+    btnNewFolder: document.getElementById('btn-new-folder'),
+    btnDelete: document.getElementById('btn-delete'),
+    btnTogglePreview: document.getElementById('btn-toggle-preview'),
+    btnToggleToc: document.getElementById('btn-toggle-toc'),
+    previewPane: document.getElementById('preview-pane'),
+    tocPane: document.getElementById('toc-pane'),
+    tocContainer: document.getElementById('toc-container'),
+  };
+
+  els.btnTogglePreview.addEventListener('click', () => {
+    els.previewPane.toggleAttribute('hidden');
+    if (!els.previewPane.hasAttribute('hidden') || !els.tocPane.hasAttribute('hidden')) {
+      updatePreview();
+    }
+  });
+
+  els.btnToggleToc.addEventListener('click', () => {
+    els.tocPane.toggleAttribute('hidden');
+    if (!els.previewPane.hasAttribute('hidden') || !els.tocPane.hasAttribute('hidden')) {
+      updatePreview();
+    }
+  });
+
+  async function loadTree() {
+    const res = await fetch('/api/vault/tree');
+    const data = await res.json();
+    els.tree.innerHTML = renderTree(data.children);
+  }
+
+  function renderTree(nodes, padding = 1) {
+    let html = '<ul>';
+    for (const node of nodes) {
+      if (node.type === 'folder') {
+        html += `
+          <li>
+            <div class="vault-node folder-node" style="padding-left: ${padding}rem" 
+                 data-path="${node.path.replace(/'/g, "\\'")}"
+                 draggable="true"
+                 ondragstart="handleDragStart(event)"
+                 ondragover="handleDragOver(event)"
+                 ondragenter="handleDragEnter(event)"
+                 ondragleave="handleDragLeave(event)"
+                 ondrop="handleDrop(event)">
+              <span class="vault-node-title" onclick="this.parentElement.nextElementSibling.toggleAttribute('hidden')">📁 ${node.name}</span>
+              <div class="vault-node-actions">
+                ${node.path.includes('/') ? `<button title="Move Out" onclick="actionMoveOut('${node.path.replace(/'/g, "\\'")}')">⬆️</button>` : ''}
+                <button title="New Note Inside" onclick="actionNewFile('${node.path.replace(/'/g, "\\'")}')">📄+</button>
+                <button title="Rename Folder" onclick="actionRename('${node.path.replace(/'/g, "\\'")}')">✏️</button>
+                <button title="Delete Folder" onclick="actionDelete('${node.path.replace(/'/g, "\\'")}')">🗑</button>
+              </div>
+            </div>
+            <div hidden>${renderTree(node.children, padding + 1)}</div>
+          </li>
+        `;
+      } else {
+        html += `
+          <li>
+            <div class="vault-node file-link file-node" data-path="${node.path}" style="padding-left: ${padding}rem"
+                 draggable="true"
+                 ondragstart="handleDragStart(event)">
+              <span class="vault-node-title" onclick="openFile('${node.path.replace(/'/g, "\\'")}')">📄 ${node.name}</span>
+              <div class="vault-node-actions">
+                ${node.path.includes('/') ? `<button title="Move Out" onclick="actionMoveOut('${node.path.replace(/'/g, "\\'")}')">⬆️</button>` : ''}
+                <button title="Rename File" onclick="actionRename('${node.path.replace(/'/g, "\\'")}')">✏️</button>
+                <button title="Delete File" onclick="actionDelete('${node.path.replace(/'/g, "\\'")}')">🗑</button>
+              </div>
+            </div>
+          </li>
+        `;
+      }
+    }
+    html += '</ul>';
+    return html;
+  }
+
+  async function openFile(path) {
+    currentFile = path;
+    const res = await fetch(`/api/vault/file?path=${encodeURIComponent(path)}`);
+    const data = await res.json();
+    
+    els.editor.value = data.content || '';
+    updatePreview();
+    
+    els.workspace.style.display = 'flex';
+    els.emptyState.style.display = 'none';
+    els.fileLabel.textContent = path;
+    els.btnDelete.style.display = 'inline-block';
+    els.btnTogglePreview.style.display = 'inline-block';
+    els.btnToggleToc.style.display = 'inline-block';
+    
+    // Highlight active in tree
+    document.querySelectorAll('.file-link').forEach(el => el.classList.remove('active'));
+    const activeEl = document.querySelector(`.file-link[data-path="${path}"]`);
+    if(activeEl) activeEl.classList.add('active');
+  }
+
+  async function saveFile() {
+    if (!currentFile) return;
+    const content = els.editor.value;
+    await fetch('/api/vault/file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: currentFile, content: content })
+    });
+  }
+
+  function updatePreview() {
+    if (els.previewPane.hasAttribute('hidden') && els.tocPane.hasAttribute('hidden')) return;
+
+    els.preview.innerHTML = marked.parse(els.editor.value);
+    
+    // Generate TOC
+    let tocHtml = '<strong>Table of Contents</strong><ul style="list-style:none; padding-left:0; margin-top:0.5rem; margin-bottom:0;">';
+    const headings = els.preview.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    headings.forEach((h, index) => {
+        const id = 'heading-' + index;
+        h.id = id;
+        const level = parseInt(h.tagName.substring(1));
+        const padding = (level - 1) * 1;
+        tocHtml += `<li style="padding-left: ${padding}rem"><a href="#${id}">${h.textContent}</a></li>`;
+    });
+    tocHtml += '</ul>';
+    if (headings.length === 0) {
+        tocHtml = '<span style="opacity:0.5">No headings found</span>';
+    }
+    els.tocContainer.innerHTML = tocHtml;
+  }
+
+  els.editor.addEventListener('input', () => {
+    updatePreview();
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveFile, 500); // Auto-save after 500ms
+  });
+
+  async function actionNewFile(folderPath = '') {
+    let name = prompt('New Note Name (e.g., Project.md):');
+    if (!name) return;
+    let fullPath = folderPath ? folderPath + '/' + name : name;
+    const res = await fetch('/api/vault/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: fullPath, is_dir: false })
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        alert(error.detail);
+        return;
+    }
+    await loadTree();
+    openFile(fullPath.endsWith('.md') ? fullPath : fullPath + '.md');
+  }
+
+  async function actionMoveOut(path) {
+    const parts = path.split('/');
+    if (parts.length <= 1) return; // Already at root
+    const fileName = parts.pop();
+    parts.pop(); // Remove parent folder
+    const newPath = parts.length > 0 ? parts.join('/') + '/' + fileName : fileName;
+    
+    if (path === newPath) return;
+
+    await fetch('/api/vault/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_path: path, new_path: newPath })
+    });
+    
+    if (currentFile === path || currentFile?.startsWith(path + '/')) {
+        if (path === currentFile && !newPath.endsWith('.md')) {
+            newPath += '.md';
+        }
+        if (path === currentFile) openFile(newPath);
+    }
+    await loadTree();
+  }
+
+  async function actionRename(oldPath) {
+    let newPath = prompt('Rename to:', oldPath);
+    if (!newPath || newPath === oldPath) return;
+    await fetch('/api/vault/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_path: oldPath, new_path: newPath })
+    });
+    await loadTree();
+    if (currentFile === oldPath || currentFile?.startsWith(oldPath + '/')) {
+        let isMd = newPath.endsWith('.md') || oldPath.endsWith('.md');
+        if (oldPath === currentFile && !newPath.endsWith('.md')) {
+            newPath += '.md';
+        }
+        if (oldPath === currentFile) openFile(newPath);
+    }
+  }
+
+  async function actionDelete(path) {
+    if (!confirm(`Are you sure you want to delete ${path}?`)) return;
+    await fetch(`/api/vault/file?path=${encodeURIComponent(path)}`, { method: 'DELETE' });
+    
+    if (currentFile === path || currentFile?.startsWith(path + '/')) {
+        currentFile = null;
+        els.workspace.style.display = 'none';
+        els.emptyState.style.display = 'flex';
+        els.fileLabel.textContent = 'No file selected';
+        els.btnDelete.style.display = 'none';
+        els.btnTogglePreview.style.display = 'none';
+        els.btnToggleToc.style.display = 'none';
+    }
+    loadTree();
+  }
+
+  els.btnNewFile.addEventListener('click', () => actionNewFile(''));
+
+  els.btnNewFolder.addEventListener('click', async () => {
+    let name = prompt('New Folder Name:');
+    if (!name) return;
+    const res = await fetch('/api/vault/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: name, is_dir: true })
+    });
+    if (!res.ok) {
+        const error = await res.json();
+        alert(error.detail);
+        return;
+    }
+    loadTree();
+  });
+
+  els.btnDelete.addEventListener('click', () => actionDelete(currentFile));
+
+  // Drag and Drop Logic
+  let draggedPath = null;
+
+  function handleDragStart(e) {
+    draggedPath = e.currentTarget.getAttribute('data-path');
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  function handleDragEnter(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+  }
+
+  function handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+  }
+
+  async function handleDrop(e) {
+    e.preventDefault();
+    e.currentTarget.classList.remove('drag-over');
+    
+    const targetFolder = e.currentTarget.getAttribute('data-path');
+    if (!draggedPath || draggedPath === targetFolder) return;
+    
+    // Prevent moving folder into itself
+    if (targetFolder.startsWith(draggedPath + '/')) {
+      alert("Cannot move a folder into its own subfolder.");
+      return;
+    }
+
+    const fileName = draggedPath.split('/').pop();
+    const newPath = targetFolder ? targetFolder + '/' + fileName : fileName;
+    
+    if (draggedPath === newPath) return;
+
+    await fetch('/api/vault/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_path: draggedPath, new_path: newPath })
+    });
+    
+    if (currentFile === draggedPath || currentFile?.startsWith(draggedPath + '/')) {
+        let isMd = newPath.endsWith('.md') || draggedPath.endsWith('.md');
+        if (draggedPath === currentFile && !newPath.endsWith('.md')) {
+            newPath += '.md';
+        }
+        if (draggedPath === currentFile) openFile(newPath);
+    }
+    await loadTree();
+  }
+
+  // To allow dropping into the root directory
+  els.tree.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+  
+  els.tree.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    // Only handle if dropped directly on tree container, not on a child node
+    if (e.target !== els.tree && !e.target.classList.contains('vault-tree')) return;
+    
+    if (!draggedPath) return;
+    const fileName = draggedPath.split('/').pop();
+    const newPath = fileName; // Root path
+    if (draggedPath === newPath) return;
+
+    await fetch('/api/vault/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_path: draggedPath, new_path: newPath })
+    });
+    
+    if (currentFile === draggedPath || currentFile?.startsWith(draggedPath + '/')) {
+        let isMd = newPath.endsWith('.md') || draggedPath.endsWith('.md');
+        if (draggedPath === currentFile && !newPath.endsWith('.md')) {
+            newPath += '.md';
+        }
+        if (draggedPath === currentFile) openFile(newPath);
+    }
+    await loadTree();
+  });
+
+  // Init
+  loadTree();
+</script>
+{% endblock %}

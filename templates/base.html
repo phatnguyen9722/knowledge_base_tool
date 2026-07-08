@@ -107,6 +107,7 @@
     {% if not request.url.path.startswith('/series') %}<a class="btn" data-feature-app="series" data-header-app="series" href="/series"><span class="app-icon" data-app="series">📚</span> Series</a>{% endif %}
     {% if not request.url.path.startswith('/dictionary') %}<a class="btn" data-feature-app="dictionary" data-header-app="dictionary" href="/dictionary"><span class="app-icon" data-app="dictionary">📕</span> Dictionary</a>{% endif %}
     {% if not request.url.path.startswith('/resume') %}<a class="btn" data-feature-app="resume" data-header-app="resume" href="/resume"><span class="app-icon" data-app="resume">👔</span> Resume</a>{% endif %}
+    {% if not request.url.path.startswith('/vault') %}<a class="btn" data-feature-app="vault" data-header-app="vault" href="/vault"><span class="app-icon" data-app="vault">📓</span> Vault</a>{% endif %}
     {% endblock %}
     <!-- Fixed right-side controls — never move regardless of feature visibility -->
     <div class="topbar-fixed">

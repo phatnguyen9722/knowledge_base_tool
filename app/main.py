@@ -28,6 +28,7 @@ from pydantic import BaseModel
 from .emails import EmailManager
 from .markdown import render_with_toc
 from .music import MusicManager
+from .vault import vault_manager
 from .notes import NOTE_THEMES, NoteManager
 from .post_manager import PostManager
 from .tag_manager import TagManager
@@ -242,6 +243,7 @@ async def home(request: Request):
     title_emails, desc_emails = get_app_text("emails", "Email Composers", "Template-based email drafting and composing.")
     title_dict, desc_dict = get_app_text("dictionary", "Dictionary", "Personal dictionary to store words, phrases, and descriptions.")
     title_resume, desc_resume = get_app_text("resume", "Resume", "Interactive CV with daily skill updates and PDF export.")
+    title_vault, desc_vault = get_app_text("vault", "Vault", "Obsidian-like Markdown manager with dual-pane editing.")
 
     features = [
         {"icon": "📝", "app": "posts",    "title": title_posts,    "href": "/posts",
@@ -280,6 +282,9 @@ async def home(request: Request):
         {"icon": "👔", "app": "resume", "title": title_resume, "href": "/resume",
          "desc": desc_resume,
          "count": 1},
+        {"icon": "📓", "app": "vault", "title": title_vault, "href": "/vault",
+         "desc": desc_vault,
+         "count": len(vault_manager.get_file_tree().get("children", []))},
     ]
     return templates.TemplateResponse(request, "home.html", {"features": features, "lang": ldict})
 
@@ -2145,3 +2150,67 @@ async def resume_export_md():
         media_type="text/markdown"
     )
 
+
+# ==============================================================================
+# VAULT
+# ==============================================================================
+
+@app.get("/vault", response_class=HTMLResponse)
+async def vault_index(request: Request):
+    return templates.TemplateResponse(request, "vault.html", {})
+
+@app.get("/api/vault/tree")
+async def vault_api_tree():
+    return vault_manager.get_file_tree()
+
+@app.get("/api/vault/file")
+async def vault_api_get_file(path: str = Query(...)):
+    try:
+        content = vault_manager.read_file(path)
+        return {"content": content}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class VaultSaveRequest(BaseModel):
+    path: str
+    content: str
+
+@app.post("/api/vault/file")
+async def vault_api_save_file(req: VaultSaveRequest):
+    try:
+        vault_manager.write_file(req.path, req.content)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class VaultCreateRequest(BaseModel):
+    path: str
+    is_dir: bool = False
+
+@app.post("/api/vault/create")
+async def vault_api_create_node(req: VaultCreateRequest):
+    try:
+        vault_manager.create_node(req.path, req.is_dir)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/api/vault/file")
+async def vault_api_delete_file(path: str = Query(...)):
+    try:
+        vault_manager.delete_node(path)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+class VaultRenameRequest(BaseModel):
+    old_path: str
+    new_path: str
+
+@app.post("/api/vault/rename")
+async def vault_api_rename_node(req: VaultRenameRequest):
+    try:
+        vault_manager.rename_node(req.old_path, req.new_path)
+        return {"status": "ok"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
