@@ -123,3 +123,87 @@ class TranscriptManager:
                 
             return True
         return False
+
+    def _extract_text(self, event: dict) -> str:
+        text = ""
+        ev_type = event.get("type")
+        msg = event.get("message", {})
+        
+        if ev_type == "user":
+            content = msg.get("content")
+            if isinstance(content, str):
+                text += content
+            elif isinstance(content, list):
+                for c in content:
+                    if c.get("type") == "tool_result" and c.get("content"):
+                        text += str(c.get("content", ""))
+        elif ev_type == "assistant":
+            content = msg.get("content")
+            if isinstance(content, list):
+                for c in content:
+                    if c.get("type") == "text" and c.get("text"):
+                        text += c.get("text", "")
+                    elif c.get("type") == "thinking" and c.get("thinking"):
+                        text += c.get("thinking", "")
+                    elif c.get("type") == "tool_use" and c.get("input"):
+                        text += json.dumps(c.get("input", {}))
+        return text
+
+    def search(self, query: str) -> list[dict]:
+        query_lower = query.lower()
+        results = []
+        
+        for coll_dir in self.data_dir.iterdir():
+            if not coll_dir.is_dir():
+                continue
+                
+            for file_path in coll_dir.glob("*.jsonl"):
+                slug = file_path.stem
+                name = slug
+                matched = False
+                snippet = ""
+                
+                with file_path.open(encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        try:
+                            data = json.loads(line)
+                            if data.get("type") == "ai-title" and "aiTitle" in data:
+                                name = data["aiTitle"]
+                            
+                            if not matched:
+                                raw_text = self._extract_text(data)
+                                if query_lower in raw_text.lower():
+                                    matched = True
+                                    # Generate snippet
+                                    idx = raw_text.lower().find(query_lower)
+                                    start = max(0, idx - 80)
+                                    end = min(len(raw_text), idx + len(query) + 80)
+                                    snip = raw_text[start:end]
+                                    
+                                    import html
+                                    snip_esc = html.escape(snip)
+                                    query_esc = html.escape(query)
+                                    query_esc_lower = query_esc.lower()
+                                    
+                                    # Highlight query
+                                    snip_lower = snip_esc.lower()
+                                    q_idx = snip_lower.find(query_esc_lower)
+                                    if q_idx != -1:
+                                        snip_esc = snip_esc[:q_idx] + "<mark>" + snip_esc[q_idx:q_idx+len(query_esc)] + "</mark>" + snip_esc[q_idx+len(query_esc):]
+                                        
+                                    snippet = ("..." if start > 0 else "") + snip_esc + ("..." if end < len(raw_text) else "")
+                        except json.JSONDecodeError:
+                            pass
+                            
+                if matched:
+                    results.append({
+                        "coll_slug": coll_dir.name,
+                        "slug": slug,
+                        "name": name,
+                        "snippet": snippet
+                    })
+                    
+        return results

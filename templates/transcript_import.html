@@ -10,7 +10,7 @@
     <h1>Import Transcripts</h1>
   </div>
   
-  <form method="post" action="/transcripts/import" enctype="multipart/form-data" class="meta-card" style="margin-top:1rem;">
+  <form id="upload-form" class="meta-card" style="margin-top:1rem;">
     <div class="form-group" style="margin-bottom: 1.5rem;">
       <label style="display:block; margin-bottom:.5rem; font-weight:500;">Collection Name</label>
       <input type="text" name="coll_slug" placeholder="e.g. Claude Code Sessions" required style="width:100%; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-alt);">
@@ -22,9 +22,70 @@
       <input type="file" name="files" accept=".json,.jsonl" multiple required style="width:100%; padding: 1rem; border: 2px dashed var(--border); border-radius: 8px; background: var(--bg-alt); cursor:pointer;">
     </div>
     
+    <div id="progress-container" style="display: none; margin-bottom: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+        <span style="font-size: 0.9rem; font-weight: 500;">Uploading...</span>
+        <span id="progress-text" style="font-size: 0.9rem; font-weight: 500;">0%</span>
+      </div>
+      <div style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+        <div id="progress-bar" style="height: 100%; width: 0%; background: var(--accent); transition: width 0.2s ease;"></div>
+      </div>
+    </div>
+
     <div style="display: flex; gap: 0.8rem; margin-top: 1rem;">
-      <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-size: 1rem;">Upload Transcripts</button>
-      <a href="/transcripts" class="btn btn-ghost" style="padding: 0.6rem 1.2rem;">Cancel</a>
+      <button type="submit" id="submit-btn" class="btn btn-primary" style="padding: 0.6rem 1.2rem; font-size: 1rem;">Upload Transcripts</button>
+      <a href="/transcripts" id="cancel-btn" class="btn btn-ghost" style="padding: 0.6rem 1.2rem;">Cancel</a>
     </div>
   </form>
+
+  <script>
+    const form = document.getElementById('upload-form');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressText = document.getElementById('progress-text');
+    const submitBtn = document.getElementById('submit-btn');
+    const cancelBtn = document.getElementById('cancel-btn');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      const xhr = new XMLHttpRequest();
+      
+      xhr.open('POST', '/transcripts/import', true);
+      
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percentComplete = Math.round((event.loaded / event.total) * 100);
+          progressBar.style.width = percentComplete + '%';
+          progressText.innerText = percentComplete + '%';
+        }
+      };
+      
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 400) {
+          progressText.innerText = 'Upload Complete! Redirecting...';
+          window.location.href = xhr.responseURL;
+        } else {
+          alert('An error occurred during the upload.');
+          submitBtn.disabled = false;
+          submitBtn.innerText = 'Upload Transcripts';
+        }
+      };
+      
+      xhr.onerror = () => {
+        alert('A network error occurred.');
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Upload Transcripts';
+      };
+      
+      progressContainer.style.display = 'block';
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Uploading...';
+      cancelBtn.style.pointerEvents = 'none';
+      cancelBtn.style.opacity = '0.5';
+      
+      xhr.send(formData);
+    });
+  </script>
 {% endblock %}

@@ -19,7 +19,7 @@
     {% for ev in transcript.events %}
       {% if ev.type == "user" %}
         {% if ev.message and ev.message.content is string %}
-          <div class="chat-bubble user-bubble">
+          <div class="chat-bubble user-bubble collapsible-bubble">
             <div class="bubble-header">User</div>
             <div class="bubble-content">{{ ev.message.content }}</div>
           </div>
@@ -37,7 +37,7 @@
         {% endif %}
       {% elif ev.type == "assistant" %}
         {% if ev.message and ev.message.content is iterable and not ev.message.content is string %}
-          <div class="chat-bubble assistant-bubble">
+          <div class="chat-bubble assistant-bubble collapsible-bubble">
             <div class="bubble-header">Claude</div>
             {% for c in ev.message.content %}
               {% if c.type == "text" %}
@@ -70,4 +70,32 @@
       {% endif %}
     {% endfor %}
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll(".collapsible-bubble").forEach(bubble => {
+        // Only collapse if it's significantly taller than 400px
+        if (bubble.scrollHeight > 450) {
+          bubble.classList.add("needs-collapse");
+          
+          const btn = document.createElement("button");
+          btn.className = "btn show-more-btn";
+          btn.innerText = "Show more";
+          // Small style tweaks for the button to look good over text
+          btn.style.padding = "0.4rem 1rem";
+          btn.style.fontSize = "0.9rem";
+          btn.style.borderRadius = "20px";
+          btn.style.background = "var(--bg)";
+          btn.style.color = "var(--fg)";
+          
+          btn.onclick = () => {
+            bubble.classList.remove("needs-collapse");
+            btn.style.display = "none";
+          };
+          
+          bubble.appendChild(btn);
+        }
+      });
+    });
+  </script>
 {% endblock %}

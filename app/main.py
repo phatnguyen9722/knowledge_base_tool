@@ -2361,6 +2361,11 @@ def list_collections(request: Request):
     collections = transcripts_mgr.list_collections()
     return templates.TemplateResponse(request, "transcripts_list.html", {"collections": collections})
 
+@app.get("/transcripts/search", response_class=HTMLResponse)
+def search_transcripts(request: Request, q: str = Query("")):
+    results = transcripts_mgr.search(q) if q else []
+    return templates.TemplateResponse(request, "transcript_search.html", {"results": results, "query": q})
+
 @app.get("/transcripts/import", response_class=HTMLResponse)
 def import_transcript_form(request: Request):
     collections = transcripts_mgr.list_collections()

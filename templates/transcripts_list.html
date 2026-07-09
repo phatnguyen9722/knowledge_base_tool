@@ -8,6 +8,13 @@
     <a class="btn btn-primary head-action" href="/transcripts/import">+ Import Transcripts</a>
   </div>
 
+  <div style="margin-bottom: 2rem;">
+    <form action="/transcripts/search" method="get" style="display: flex; gap: 0.5rem;">
+      <input type="text" name="q" placeholder="Search across all transcripts..." required style="flex:1; padding: 0.8rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-alt); font-size:1rem;">
+      <button type="submit" class="btn btn-primary" style="padding: 0 1.2rem;">Search</button>
+    </form>
+  </div>
+
   {% if not collections %}
     <p class="muted empty">No transcripts imported yet. Import a .json or .jsonl file to get started.</p>
   {% endif %}
