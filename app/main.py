@@ -1411,6 +1411,26 @@ def view_task(request: Request, slug: str, v: int | None = None):
     })
 
 
+@app.get("/tasks/{slug}/download", response_class=FileResponse)
+async def task_download(slug: str, v: int | None = None):
+    task = tasks_mgr.read(slug)
+    if not task:
+        raise HTTPException(404)
+    version = task.latest if v is None else tasks_mgr.read_version(slug, v)
+    if not version:
+        raise HTTPException(404)
+        
+    path = tasks_mgr._task_dir(slug) / version.filename
+    if not path.exists():
+        raise HTTPException(404)
+        
+    return FileResponse(
+        path,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{version.filename}"'}
+    )
+
+
 @app.get("/tasks/{slug}/edit", response_class=HTMLResponse)
 def edit_task_form(request: Request, slug: str):
     task = tasks_mgr.read(slug)

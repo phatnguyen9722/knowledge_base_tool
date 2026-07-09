@@ -40,9 +40,12 @@
         File: <code>{{ version.filename }}</code>
       </div>
     </div>
-    {% if is_latest %}
-    <a class="btn btn-primary head-action" href="/tasks/{{ task.slug }}/edit">Edit Task</a>
-    {% endif %}
+    <div style="display:flex; gap:0.5rem; align-items:flex-start;">
+      <a class="btn" href="/tasks/{{ task.slug }}/download?v={{ version.version }}">Download</a>
+      {% if is_latest %}
+      <a class="btn btn-primary" href="/tasks/{{ task.slug }}/edit">Edit Task</a>
+      {% endif %}
+    </div>
   </div>
 
   <div class="meta-card" style="margin-top: 1rem;">
