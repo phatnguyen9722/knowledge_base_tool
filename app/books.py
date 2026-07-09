@@ -274,6 +274,32 @@ class BookManager:
         self._chapter_path(coll, slug).write_text(frontmatter.dumps(fm), encoding="utf-8")
         return slug
 
+    def update_chapter(self, coll: str, slug: str, data: dict) -> str | None:
+        existing = self.read_chapter(coll, slug)
+        if not existing:
+            return None
+        try:
+            order = int(data.get("order", existing.order) or 0)
+        except (ValueError, TypeError):
+            order = existing.order
+        meta = {
+            "title": data.get("title", "").strip() or existing.title,
+            "order": order,
+            "created": existing.created or date.today().isoformat(),
+            "updated": date.today().isoformat(),
+        }
+        content = data.get("content", existing.content)
+        fm = frontmatter.Post(content, **meta)
+        self._chapter_path(coll, slug).write_text(frontmatter.dumps(fm), encoding="utf-8")
+        return slug
+
+    def delete_chapter(self, coll: str, slug: str) -> bool:
+        path = self._chapter_path(coll, slug)
+        if path.exists() and path.is_file():
+            path.unlink()
+            return True
+        return False
+
     # ------------------------------------------------------------------ #
     # Resource Books (binary files: PDF, EPUB, MOBI, CBZ, ...)
     # ------------------------------------------------------------------ #

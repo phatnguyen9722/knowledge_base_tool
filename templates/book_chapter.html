@@ -6,10 +6,18 @@
     <article class="post">
       <a class="back" href="/books/{{ collection.slug }}">← {{ collection.title }}</a>
 
-      <header class="post-head">
-        <h1>{{ chapter.title }}</h1>
-        <div class="post-meta">
-          <span class="muted">Chapter {{ number }} of {{ total }}</span>
+      <header class="post-head" style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <h1 style="margin-bottom:0;">{{ chapter.title }}</h1>
+          <div class="post-meta">
+            <span class="muted">Chapter {{ number }} of {{ total }}</span>
+          </div>
+        </div>
+        <div class="post-actions" style="display:flex; gap:0.5rem; align-items:center;">
+          <a class="btn" href="/books/{{ collection.slug }}/chapter/{{ chapter.slug }}/edit">Edit</a>
+          <form method="post" action="/books/{{ collection.slug }}/chapter/{{ chapter.slug }}/delete" onsubmit="return confirm('Delete this chapter?');" style="margin:0;">
+            <button class="btn btn-danger">Delete</button>
+          </form>
         </div>
       </header>
 

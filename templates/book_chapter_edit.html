@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Edit Chapter – {{ chapter.title }}{% endblock %}
+
+{% block content %}
+  <form class="editor" method="post" action="/books/{{ collection.slug }}/chapter/{{ chapter.slug }}/edit">
+    <div class="editor-bar">
+      <input type="text" name="title" placeholder="Chapter title" value="{{ chapter.title }}" required>
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+      <a class="btn" href="/books/{{ collection.slug }}/{{ chapter.slug }}">Cancel</a>
+    </div>
+
+    <div class="editor-fields">
+      <input type="number" name="order" title="Chapter order" value="{{ chapter.order }}">
+      <span class="muted">in <strong>{{ collection.title }}</strong></span>
+    </div>
+
+    <div class="editor-panes">
+      <textarea name="content" id="md-input"
+                placeholder="Write the chapter in markdown…  (paste an image to upload it)">{{ chapter.content }}</textarea>
+      <div class="preview markdown" id="md-preview"></div>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>initEditor();</script>
+{% endblock %}

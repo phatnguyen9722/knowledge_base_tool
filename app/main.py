@@ -646,7 +646,37 @@ async def book_chapter_read(request: Request, coll: str, chapter: str):
         },
     )
 
+@app.get("/books/{coll}/chapter/{chapter}/edit", response_class=HTMLResponse)
+async def book_chapter_edit_form(request: Request, coll: str, chapter: str):
+    collection = books.read_collection(coll, with_chapters=False)
+    if not collection:
+        raise HTTPException(404)
+    ch = books.read_chapter(coll, chapter)
+    if not ch:
+        raise HTTPException(404)
+    return templates.TemplateResponse(
+        request,
+        "book_chapter_edit.html",
+        {"collection": collection, "chapter": ch},
+    )
 
+@app.post("/books/{coll}/chapter/{chapter}/edit")
+async def book_chapter_update(
+    coll: str,
+    chapter: str,
+    title: str = Form(...),
+    order: int = Form(0),
+    content: str = Form(""),
+):
+    if not books.update_chapter(coll, chapter, {"title": title, "order": order, "content": content}):
+        raise HTTPException(404)
+    return RedirectResponse(f"/books/{coll}/{chapter}", status_code=303)
+
+@app.post("/books/{coll}/chapter/{chapter}/delete")
+async def book_chapter_delete(coll: str, chapter: str):
+    if not books.delete_chapter(coll, chapter):
+        raise HTTPException(404)
+    return RedirectResponse(f"/books/{coll}", status_code=303)
 
 # --------------------------------------------------------------------------- #
 # Email Composers
