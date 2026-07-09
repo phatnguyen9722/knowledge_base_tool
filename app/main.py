@@ -1355,6 +1355,40 @@ async def create_task(request: Request):
     return RedirectResponse(f"/tasks/{slug}", status_code=303)
 
 
+import csv
+import io
+
+@app.get("/tasks/export")
+async def tasks_export():
+    tasks = tasks_mgr.list()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(["Slug", "Title", "User", "Version", "Created", "Updated", "Week", "Total Subtasks", "Done Subtasks"])
+    
+    for t in tasks:
+        lv = t.latest
+        total = len(lv.subtasks)
+        done = sum(1 for st in lv.subtasks if st.status == "done")
+        writer.writerow([
+            t.slug,
+            lv.title,
+            lv.user,
+            lv.version,
+            lv.created,
+            lv.updated,
+            lv.week,
+            total,
+            done
+        ])
+        
+    response = Response(content=output.getvalue())
+    response.headers["Content-Disposition"] = "attachment; filename=tasks_export.csv"
+    response.headers["Content-Type"] = "text/csv"
+    return response
+
+
 @app.get("/tasks/{slug}", response_class=HTMLResponse)
 def view_task(request: Request, slug: str, v: int | None = None):
     task = tasks_mgr.read(slug)

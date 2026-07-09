@@ -40,6 +40,13 @@ class TaskVersion:
     created: str
     updated: str
 
+    @property
+    def week(self) -> int:
+        try:
+            return datetime.fromisoformat(self.updated).isocalendar()[1]
+        except Exception:
+            return 0
+
 
 @dataclass
 class Task:

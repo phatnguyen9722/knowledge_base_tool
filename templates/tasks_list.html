@@ -15,7 +15,10 @@
   <div class="feed-head">
     <h1>✅ Tasks</h1>
     <span class="muted">{{ tasks|length }} task{{ '' if tasks|length == 1 else 's' }}</span>
-    <a class="btn btn-primary head-action" href="/tasks/new">+ New Task</a>
+    <div style="display:flex; gap:0.5rem; margin-left:auto;">
+      <a class="btn" href="/tasks/export" style="background:var(--bg); border:1px solid var(--border);">Export CSV</a>
+      <a class="btn btn-primary head-action" href="/tasks/new" style="margin-left:0;">+ New Task</a>
+    </div>
   </div>
 
   {% if q %}
@@ -37,7 +40,7 @@
       <div class="note-box-head">
         <h2 class="note-title">{{ t.title }}</h2>
       </div>
-      <time class="note-date muted" style="margin-bottom:0">v{{ t.latest.version }} · Updated {{ t.latest.updated[:10] }}</time>
+      <time class="note-date muted" style="margin-bottom:0">v{{ t.latest.version }} · Updated {{ t.latest.updated[:10] }} (Week {{ t.latest.week }})</time>
       <div class="muted" style="font-size:0.8rem; margin-bottom:.5rem;">by <strong>{{ t.latest.user }}</strong></div>
       
       <div class="task-progress" style="margin-top: .5rem; margin-bottom: 1rem;">

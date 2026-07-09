@@ -4,15 +4,17 @@
 {% block sidebar %}
   <section class="facet">
     <h2>Version History</h2>
-    <ul class="playlist-tracks">
+    <ul class="version-timeline">
       <li class="{{ 'playing' if is_latest else '' }}">
         <a href="/tasks/{{ task.slug }}">Latest (v{{ task.latest.version }})</a>
-        <div class="muted" style="font-size:0.8rem; margin-top:0.2rem;">Updated {{ task.latest.updated[:10] }} by {{ task.latest.user }}</div>
+        <div class="muted" style="font-size:0.8rem; margin-top:0.2rem;">Updated {{ task.latest.updated[:10] }} (Week {{ task.latest.week }})</div>
+        <div class="muted" style="font-size:0.8rem;">by <strong>{{ task.latest.user }}</strong></div>
       </li>
       {% for hist in task.history %}
       <li class="{{ 'playing' if not is_latest and version.version == hist.version else '' }}">
         <a href="/tasks/{{ task.slug }}?v={{ hist.version }}">v{{ hist.version }} ({{ hist.date_str }})</a>
-        <div class="muted" style="font-size:0.8rem; margin-top:0.2rem;">by {{ hist.user }}</div>
+        <div class="muted" style="font-size:0.8rem; margin-top:0.2rem;">Week {{ hist.week }}</div>
+        <div class="muted" style="font-size:0.8rem;">by <strong>{{ hist.user }}</strong></div>
         
         <form method="post" action="/tasks/{{ task.slug }}/v/{{ hist.version }}/delete"
               style="margin-top: .5rem;"
