@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ transcript.name }} – Transcripts{% endblock %}
+
+{% block content %}
+  <div style="margin-bottom: 0.5rem;">
+    <a href="/transcripts/{{ transcript.coll_slug }}" class="btn btn-ghost" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; font-weight: 500;">← Back to {{ transcript.coll_slug.replace("-", " ").title() }}</a>
+  </div>
+  
+  <div class="feed-head" style="margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="margin-bottom:0">{{ transcript.name }}</h1>
+      <div class="muted" style="margin-top:.5rem;">
+        Session: <code>{{ transcript.session_id }}</code> · Imported {{ transcript.created_at[:10] }}
+      </div>
+    </div>
+  </div>
+
+  <div class="transcript-chat">
+    {% for ev in transcript.events %}
+      {% if ev.type == "user" %}
+        {% if ev.message and ev.message.content is string %}
+          <div class="chat-bubble user-bubble">
+            <div class="bubble-header">User</div>
+            <div class="bubble-content">{{ ev.message.content }}</div>
+          </div>
+        {% elif ev.message and ev.message.content is iterable and not ev.message.content is string %}
+          {% for c in ev.message.content %}
+            {% if c.type == "tool_result" %}
+              <div class="chat-bubble tool-bubble">
+                <details>
+                  <summary class="bubble-header">🛠️ Tool Result</summary>
+                  <pre class="bubble-content" style="white-space: pre-wrap; font-size: 0.85rem;">{{ c.content }}</pre>
+                </details>
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      {% elif ev.type == "assistant" %}
+        {% if ev.message and ev.message.content is iterable and not ev.message.content is string %}
+          <div class="chat-bubble assistant-bubble">
+            <div class="bubble-header">Claude</div>
+            {% for c in ev.message.content %}
+              {% if c.type == "text" %}
+                <div class="bubble-content markdown" style="margin-bottom: 1rem;">{{ c.text | markdown | safe }}</div>
+              {% elif c.type == "thinking" %}
+                <details class="thinking-block">
+                  <summary>🤔 Thinking</summary>
+                  <div class="bubble-content muted" style="white-space: pre-wrap; font-size: 0.9rem;">{{ c.thinking }}</div>
+                </details>
+              {% elif c.type == "tool_use" %}
+                <div class="tool-call-block">
+                  <strong>🔧 Tool Call:</strong> <code>{{ c.name }}</code>
+                  <pre style="margin-top:0.5rem; font-size: 0.85rem;">{{ c.input | tojson(indent=2) }}</pre>
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% elif ev.type == "attachment" %}
+        <div class="chat-bubble system-bubble">
+          <details>
+            <summary class="bubble-header">⚙️ Attachment: {{ ev.attachment.type }}</summary>
+            {% if ev.attachment.content %}
+              <pre class="bubble-content" style="font-size:0.8rem; white-space: pre-wrap;">{{ ev.attachment.content }}</pre>
+            {% else %}
+              <pre class="bubble-content" style="font-size:0.8rem; white-space: pre-wrap;">{{ ev.attachment | tojson(indent=2) }}</pre>
+            {% endif %}
+          </details>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+{% endblock %}

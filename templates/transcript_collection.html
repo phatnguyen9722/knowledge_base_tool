@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ coll_slug.replace("-", " ").title() }} – Transcripts{% endblock %}
+
+{% block content %}
+  <div style="margin-bottom: 0.5rem;">
+    <a href="/transcripts" class="btn btn-ghost" style="padding: 0.4rem 0.8rem; font-size: 0.9rem; font-weight: 500;">← Back to Collections</a>
+  </div>
+
+  <div class="feed-head">
+    <h1>📁 {{ coll_slug.replace("-", " ").title() }}</h1>
+    <span class="muted">{{ transcripts|length }} log{{ '' if transcripts|length == 1 else 's' }}</span>
+  </div>
+
+  {% if not transcripts %}
+    <p class="muted empty">No transcripts in this collection.</p>
+  {% endif %}
+
+  <div class="notes-grid">
+    {% for t in transcripts %}
+    <article class="note-box task-card">
+      <a class="note-open" href="/transcripts/{{ coll_slug }}/{{ t.slug }}" aria-label="Open {{ t.name }}"></a>
+      <div class="note-box-head">
+        <h2 class="note-title">{{ t.name }}</h2>
+      </div>
+      <div class="muted" style="font-size:0.8rem; margin-bottom:.5rem;">Session: <code>{{ t.session_id }}</code></div>
+      <time class="note-date muted" style="margin-bottom:1rem">Imported {{ t.created_at[:10] }}</time>
+      
+      <div class="note-actions">
+        <form method="post" action="/transcripts/{{ coll_slug }}/{{ t.slug }}/delete"
+              onsubmit="return confirm('Delete this transcript? This cannot be undone.')">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+{% endblock %}

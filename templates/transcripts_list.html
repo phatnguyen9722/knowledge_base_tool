@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Transcripts – Knowledge Base{% endblock %}
+
+{% block content %}
+  <div class="feed-head">
+    <h1>💬 Transcript Collections</h1>
+    <span class="muted">{{ collections|length }} collection{{ '' if collections|length == 1 else 's' }}</span>
+    <a class="btn btn-primary head-action" href="/transcripts/import">+ Import Transcripts</a>
+  </div>
+
+  {% if not collections %}
+    <p class="muted empty">No transcripts imported yet. Import a .json or .jsonl file to get started.</p>
+  {% endif %}
+
+  <div class="notes-grid">
+    {% for c in collections %}
+    <article class="note-box task-card" style="text-align: center; padding: 2rem;">
+      <a class="note-open" href="/transcripts/{{ c.slug }}" aria-label="Open {{ c.name }}"></a>
+      <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
+      <h2 class="note-title">{{ c.name }}</h2>
+      <div class="muted">{{ c.count }} transcript{{ '' if c.count == 1 else 's' }}</div>
+    </article>
+    {% endfor %}
+  </div>
+{% endblock %}

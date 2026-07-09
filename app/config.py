@@ -35,6 +35,7 @@ class Settings:
     bookmarks_dir: Path
     emails_dir: Path
     vault_dir: Path
+    transcripts_dir: Path
     db_path: Path
     dict_db_path: Path
     templates: Path
@@ -70,6 +71,7 @@ def load_settings(base: Path | None = None) -> Settings:
     bookmarks_dir = base / data.get("bookmarks_dir", "bookmarks")
     emails_dir = base / data.get("emails_dir", "emails")
     vault_dir = base / data.get("vault_dir", "vault")
+    transcripts_dir = base / data.get("transcripts_dir", "transcripts")
     return Settings(
         base=base,
         posts_dir=posts_dir,
@@ -83,6 +85,7 @@ def load_settings(base: Path | None = None) -> Settings:
         bookmarks_dir=bookmarks_dir,
         emails_dir=emails_dir,
         vault_dir=vault_dir,
+        transcripts_dir=transcripts_dir,
         db_path=base / data.get("db_path", ".kb/search.db"),
         dict_db_path=base / data.get("dict_db_path", ".kb/dictionary.db"),
         templates=base / "templates",

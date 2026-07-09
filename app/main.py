@@ -16,6 +16,7 @@ from urllib.parse import urlencode
 import mistune
 from fastapi import FastAPI, File, Form, HTTPException, Query, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from fastapi import UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -34,6 +35,7 @@ from .post_manager import PostManager
 from .tag_manager import TagManager
 from .tasks import TaskManager
 from .toeic import ToeicManager, parse_listening
+from .transcripts import TranscriptManager
 from .sync import get_sync_config, set_sync_config, get_sync_preview, execute_sync, execute_initial_setup, execute_backup
 
 # --------------------------------------------------------------------------- #
@@ -51,6 +53,7 @@ API_DOCS_DIR = _settings.api_docs_dir
 BOOKMARKS_DIR = _settings.bookmarks_dir
 TASKS_DIR = _settings.tasks_dir
 EMAILS_DIR = _settings.emails_dir
+TRANSCRIPTS_DIR = _settings.transcripts_dir
 DB_PATH = _settings.db_path
 TEMPLATES = _settings.templates
 STATIC = _settings.static
@@ -134,6 +137,7 @@ api_docs = ApiDocsManager(API_DOCS_DIR)
 bmarks = BookmarksManager(BOOKMARKS_DIR)
 tasks_mgr = TaskManager(TASKS_DIR)
 email_mgr = EmailManager(EMAILS_DIR)
+transcripts_mgr = TranscriptManager(TRANSCRIPTS_DIR)
 
 
 def _parse_tags(raw: str) -> list[str]:
@@ -245,6 +249,7 @@ async def home(request: Request):
     title_dict, desc_dict = get_app_text("dictionary", "Dictionary", "Personal dictionary to store words, phrases, and descriptions.")
     title_resume, desc_resume = get_app_text("resume", "Resume", "Interactive CV with daily skill updates and PDF export.")
     title_vault, desc_vault = get_app_text("vault", "Vault", "Obsidian-like Markdown manager with dual-pane editing.")
+    title_transcripts, desc_transcripts = get_app_text("transcripts", "Transcripts", "AI Conversation logs and transcripts.")
 
     features = [
         {"icon": "📝", "app": "posts",    "title": title_posts,    "href": "/posts",
@@ -286,6 +291,9 @@ async def home(request: Request):
         {"icon": "📓", "app": "vault", "title": title_vault, "href": "/vault",
          "desc": desc_vault,
          "count": len(vault_manager.get_file_tree().get("children", []))},
+        {"icon": "💬", "app": "transcripts", "title": title_transcripts, "href": "/transcripts",
+         "desc": desc_transcripts,
+         "count": len(transcripts_mgr.list_collections())},
     ]
     return templates.TemplateResponse(request, "home.html", {"features": features, "lang": ldict})
 
@@ -2343,4 +2351,50 @@ async def api_sync_backup():
     if result["status"] == "error":
         return {"status": "error", "message": result["message"]}
     return result
+
+# --------------------------------------------------------------------------- #
+# Transcripts Feature
+# --------------------------------------------------------------------------- #
+
+@app.get("/transcripts", response_class=HTMLResponse)
+def list_collections(request: Request):
+    collections = transcripts_mgr.list_collections()
+    return templates.TemplateResponse(request, "transcripts_list.html", {"collections": collections})
+
+@app.get("/transcripts/import", response_class=HTMLResponse)
+def import_transcript_form(request: Request):
+    collections = transcripts_mgr.list_collections()
+    return templates.TemplateResponse(request, "transcript_import.html", {"collections": collections})
+
+@app.post("/transcripts/import")
+async def import_transcript(coll_slug: str = Form(...), files: list[UploadFile] = File(...)):
+    from slugify import slugify
+    c_slug = slugify(coll_slug) or "default"
+    last_slug = ""
+    for file in files:
+        if file.filename:
+            content = await file.read()
+            content_str = content.decode("utf-8")
+            last_slug = transcripts_mgr.import_transcript(c_slug, file.filename, content_str)
+            
+    if len(files) == 1 and last_slug:
+        return RedirectResponse(f"/transcripts/{c_slug}/{last_slug}", status_code=303)
+    return RedirectResponse(f"/transcripts/{c_slug}", status_code=303)
+
+@app.get("/transcripts/{coll}", response_class=HTMLResponse)
+def view_collection(request: Request, coll: str):
+    transcripts = transcripts_mgr.list_transcripts(coll)
+    return templates.TemplateResponse(request, "transcript_collection.html", {"coll_slug": coll, "transcripts": transcripts})
+
+@app.get("/transcripts/{coll}/{slug}", response_class=HTMLResponse)
+def view_transcript(request: Request, coll: str, slug: str):
+    transcript = transcripts_mgr.read(coll, slug)
+    if not transcript:
+        raise HTTPException(status_code=404, detail="Transcript not found")
+    return templates.TemplateResponse(request, "transcript_detail.html", {"transcript": transcript})
+
+@app.post("/transcripts/{coll}/{slug}/delete")
+def delete_transcript(coll: str, slug: str):
+    transcripts_mgr.delete(coll, slug)
+    return RedirectResponse(f"/transcripts/{coll}", status_code=303)
 
