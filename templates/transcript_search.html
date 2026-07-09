@@ -18,7 +18,7 @@
   {% if query %}
     <p class="muted" style="margin-bottom: 1.5rem;">Found {{ results|length }} result{{ '' if results|length == 1 else 's' }} for "<strong>{{ query }}</strong>"</p>
     {% if results %}
-      <div class="search-results" style="display:flex; flex-direction:column; gap:1rem;">
+      <div class="transcript-search-results" style="display:flex; flex-direction:column; gap:1rem;">
         {% for r in results %}
           <a href="/transcripts/{{ r.coll_slug }}/{{ r.slug }}" class="search-result-card" style="display:block; padding:1.2rem; border-radius:8px; background:var(--card); border:1px solid var(--border); text-decoration:none; color:inherit; transition:transform 0.2s, box-shadow 0.2s;">
             <div style="font-size:0.85rem; color:var(--muted); margin-bottom:0.3rem;">📁 {{ r.coll_slug.replace("-", " ").title() }}</div>
