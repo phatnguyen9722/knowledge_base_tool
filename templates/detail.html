@@ -4,10 +4,18 @@
 {# Series dashboard injected into the global left sidebar slot #}
 {% block sidebar %}
   {% if series %}
-  <nav class="series-nav" aria-label="Series dashboard" style="padding-top: 1rem;">
+  <nav class="series-nav" aria-label="Series dashboard" style="padding-top: 0.5rem;">
     <div class="series-head" style="margin-bottom: 1rem; position: relative;">
       <button id="close-series-btn" class="btn btn-ghost" title="Hide Dashboard"
-              style="position: absolute; right: 0; top: 0; padding: 0.2rem 0.5rem; font-size: 1rem;">✖</button>
+              style="position: absolute; right: 0; top: 0; padding: 0.25rem; width: 28px; height: 28px;
+                     display: flex; align-items: center; justify-content: center;
+                     border-radius: 8px; opacity: 0.45; transition: opacity 0.2s;"
+              onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.45'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
       <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">📚</div>
       <h2 style="font-size: 1.1rem; margin: 0 0 0.2rem 0; color: var(--accent);">{{ series.name }}</h2>
       <div class="muted" style="font-size: 0.85rem;">Part {{ series.number }} of {{ series.total }}</div>
