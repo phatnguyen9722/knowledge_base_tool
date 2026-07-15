@@ -384,36 +384,111 @@ class BookManager:
         """Extract chapters/sections from EPUB/MOBI/FB2 for text-render formats.
         Returns list of dicts: [{title, html, index}]
         """
+        path = self._resource_path(coll, filename)
+        if not path.exists():
+            return []
+
+        ext = Path(filename).suffix.lower()
+
+        # ── EPUB: prefer ebooklib for clean HTML extraction ────────────
+        if ext == ".epub":
+            try:
+                return self._extract_epub(path)
+            except Exception:
+                pass  # fall through to PyMuPDF
+
+        # ── Fallback: PyMuPDF for MOBI / FB2 / AZW etc. ───────────────
+        return self._extract_via_pymupdf(path)
+
+    # ------------------------------------------------------------------ #
+    # Internal extraction helpers
+    # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _clean_pymupdf_html(raw: str) -> str:
+        """Strip the outer html/head/body wrapper that PyMuPDF emits and
+        remove absolute pixel positions so text reflows naturally."""
+        import re
+        # Drop everything outside <body> … </body>
+        body_match = re.search(r"<body[^>]*>(.*?)</body>", raw, re.S | re.I)
+        html = body_match.group(1) if body_match else raw
+
+        # PyMuPDF wraps every span with style="position:absolute; ..."
+        # Replace absolute positioning with inline-block so text flows.
+        html = re.sub(
+            r'style="[^"]*position\s*:\s*absolute[^"]*"',
+            'style="display:inline;"',
+            html, flags=re.I
+        )
+        # Remove empty <p> / <div> tags that result from the cleanup
+        html = re.sub(r'<(p|div)>\s*</(p|div)>', '', html, flags=re.I)
+        # Drop @font-face and <style> blocks that may have leaked through
+        html = re.sub(r'<style[^>]*>.*?</style>', '', html, re.S | re.I)
+        return html.strip()
+
+    def _extract_epub(self, path: Path) -> list[dict]:
+        """Extract clean chapters from an EPUB using ebooklib."""
+        import ebooklib
+        from ebooklib import epub
+        import re
+
+        book = epub.read_epub(str(path), options={"ignore_ncx": False})
+        chapters = []
+        idx = 0
+
+        # Walk the spine order for correct reading order
+        for item in book.get_items_of_type(ebooklib.ITEM_DOCUMENT):
+            raw_html = item.get_body_content().decode("utf-8", errors="replace")
+
+            # Extract only the <body> contents
+            body_match = re.search(r"<body[^>]*>(.*?)</body>", raw_html, re.S | re.I)
+            body_html = body_match.group(1) if body_match else raw_html
+
+            # Strip EPUB internal styling that breaks reflow and overlaps text
+            body_html = re.sub(r'<style[^>]*>.*?</style>', '', body_html, flags=re.S | re.I)
+            body_html = re.sub(r'\s+(class|style|id|width|height)="[^"]*"', '', body_html, flags=re.I)
+            body_html = re.sub(r"\s+(class|style|id|width|height)='[^']*'", '', body_html, flags=re.I)
+
+            # Skip completely empty items
+            if not re.sub(r'<[^>]+>', '', body_html).strip():
+                continue
+
+            # Try to derive a chapter title from h1/h2/h3 or the item file name
+            heading = re.search(r'<h[1-3][^>]*>\s*(.*?)\s*</h[1-3]>', body_html, re.S | re.I)
+            if heading:
+                title = re.sub(r'<[^>]+>', '', heading.group(1)).strip()
+            else:
+                title = item.get_name().split("/")[-1].replace("-", " ").replace("_", " ").rsplit(".", 1)[0]
+                title = title.strip() or f"Section {idx + 1}"
+
+            chapters.append({"index": idx, "title": title, "html": body_html})
+            idx += 1
+
+        return chapters
+
+    def _extract_via_pymupdf(self, path: Path) -> list[dict]:
+        """Extract chapters using PyMuPDF with cleaned HTML output."""
         try:
-            import fitz  # PyMuPDF
-            path = self._resource_path(coll, filename)
-            if not path.exists():
-                return []
+            import fitz
             doc = fitz.open(str(path))
             toc = doc.get_toc()  # [[level, title, page], ...]
             chapters = []
             if toc:
-                # Group pages by TOC entries
                 for i, entry in enumerate(toc):
                     level, title, start_page = entry
                     end_page = toc[i + 1][2] if i + 1 < len(toc) else doc.page_count
-                    html_parts = []
+                    parts = []
                     for p in range(start_page - 1, min(end_page, doc.page_count)):
-                        page = doc.load_page(p)
-                        html_parts.append(page.get_text("html"))
-                    chapters.append({
-                        "index": i,
-                        "title": title,
-                        "html": "".join(html_parts),
-                    })
+                        raw = doc.load_page(p).get_text("html")
+                        parts.append(self._clean_pymupdf_html(raw))
+                    chapters.append({"index": i, "title": title, "html": "".join(parts)})
             else:
-                # No TOC — treat entire doc as one chapter per page
                 for p in range(doc.page_count):
-                    page = doc.load_page(p)
+                    raw = doc.load_page(p).get_text("html")
                     chapters.append({
                         "index": p,
                         "title": f"Page {p + 1}",
-                        "html": page.get_text("html"),
+                        "html": self._clean_pymupdf_html(raw),
                     })
             doc.close()
             return chapters

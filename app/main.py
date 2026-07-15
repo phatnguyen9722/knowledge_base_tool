@@ -602,23 +602,65 @@ async def book_resource_reader(request: Request, coll: str, fname: str, page: in
             }
         )
     else:
-        chapters = books.resource_text_chapters(coll, fname)
-        page = max(0, min(page, len(chapters) - 1))
-        current_chapter = chapters[page] if chapters else {"title": "Empty", "html": ""}
         return templates.TemplateResponse(
             request, "book_reader.html",
             {
                 "collection": collection,
                 "fname": fname,
                 "mode": "text",
-                "page": page,
-                "total_pages": len(chapters),
-                "prev_page": page - 1 if page > 0 else None,
-                "next_page": page + 1 if page < len(chapters) - 1 else None,
-                "chapters": chapters,
-                "current_chapter": current_chapter,
+                "book_url": f"/books/{coll}/resources/download/{fname}"
             }
         )
+
+@app.get("/books/{coll}/resources/download/{fname}", response_class=FileResponse)
+async def book_resource_download(coll: str, fname: str):
+    """Serve the raw file (e.g. EPUB) directly to the frontend for client-side rendering."""
+    resource_path = books._resource_path(coll, fname)
+    if not resource_path.exists():
+        raise HTTPException(404)
+    return FileResponse(str(resource_path), filename=fname)
+
+
+
+@app.get("/books/{coll}/resources/{fname}/chapter/{page}", response_class=HTMLResponse)
+async def book_chapter_content(coll: str, fname: str, page: int):
+    """Serve a single EPUB/text chapter as a fully self-contained HTML document.
+    Loaded inside an <iframe> in book_reader so EPUB CSS is fully isolated."""
+    resource_path = books._resource_path(coll, fname)
+    if not resource_path.exists():
+        raise HTTPException(404)
+    chapters = books.resource_text_chapters(coll, fname)
+    if not chapters or page < 0 or page >= len(chapters):
+        raise HTTPException(404)
+    ch = chapters[page]
+    html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {{
+    margin: 0; padding: 1.5rem 2rem;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.05rem; line-height: 1.9;
+    color: #2d2318; background: #f5f0e8;
+    overflow-x: hidden;
+  }}
+  h1, h2, h3, h4, h5, h6 {{ font-family: Georgia, serif; margin: 1.2em 0 .5em; line-height: 1.3; }}
+  p {{ margin: 0 0 .9em; text-align: justify; }}
+  img {{ max-width: 100%; height: auto; display: block; margin: 1em auto; border-radius: 4px; }}
+  a {{ color: #6b4c2a; }}
+  blockquote {{ margin: 1em 1.5em; padding-left: 1em; border-left: 3px solid #c8b89a; color: #5a4535; font-style: italic; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 1em 0; }}
+  td, th {{ border: 1px solid #c8b89a; padding: .4em .7em; }}
+  pre, code {{ font-family: monospace; font-size: .92em; background: rgba(0,0,0,.05); padding: .1em .3em; border-radius: 3px; }}
+</style>
+</head>
+<body>
+{ch['html']}
+</body>
+</html>"""
+    return HTMLResponse(content=html)
 
 
 @app.post("/books/{coll}/resources/{fname}/delete")

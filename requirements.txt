@@ -10,6 +10,7 @@ pillow
 typer
 pyyaml
 pyinstaller
+ebooklib          # EPUB extraction
 
 # dev / test
 pytest

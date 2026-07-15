@@ -2,6 +2,9 @@
 {% block title %}{{ fname }} — Reading{% endblock %}
 
 {% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
 <style>
 /* ── Reader chrome ────────────────────────────────────────────── */
 .reader-shell {
@@ -299,35 +302,113 @@
 }
 .reader-progress-text { font-size: .78rem; color: var(--muted); }
 
-/* ── Text reader ──────────────────────────────────────────────── */
+/* ── Text reader (EPUB / MOBI) ──────────────────────────────────── */
 .text-reader-wrap {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  overflow: hidden;
+  min-height: 0;
 }
-.text-book-stage {
+/* Dark outer wrapper that frames the page, matching the PDF reader */
+.epub-stage-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #1a1612;
+  border-radius: 10px;
+  padding: 1rem;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+}
+/* Parchment book page that holds the iframe */
+.epub-page-wrap {
   flex: 1;
   background: #f5f0e8;
-  border-radius: 10px;
-  padding: 2rem 2.5rem;
-  overflow-y: auto;
-  color: #2d2318;
-  line-height: 1.9;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.05rem;
-  box-shadow: 0 8px 40px rgba(0,0,0,.4);
-  transition: opacity .3s;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.7),
+    inset 0 0 0 1px rgba(0,0,0,.12);
+  position: relative;
+  transition: opacity .25s ease;
 }
-.text-book-stage.page-turning { opacity: 0; transform: rotateY(10deg); }
-.text-chapter-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  margin-bottom: 1.5rem;
-  padding-bottom: .75rem;
-  border-bottom: 1px solid #c8b89a;
-  text-align: center;
-  font-family: Georgia, serif;
+#chapter-frame {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
 }
+
+/* ── TOC Sidebar (dark panel, same aesthetic) ────────────────── */
+.epub-toc-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #2c2418;
+  color: #c8b89a;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width .3s cubic-bezier(.4,0,.2,1);
+  position: relative;
+}
+.epub-toc-sidebar.collapsed { width: 0; }
+.epub-toc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  flex-shrink: 0;
+}
+.epub-toc-header-label {
+  font-size: .75rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #a09080;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.epub-toc-toggle-btn {
+  background: none; border: none; cursor: pointer;
+  color: #a09080; font-size: 1.1rem; padding: .1rem .25rem;
+  line-height: 1; transition: color .15s; flex-shrink: 0;
+}
+.epub-toc-toggle-btn:hover { color: #f5f0e8; }
+.epub-toc-list {
+  list-style: none; padding: .5rem 0; margin: 0;
+  overflow-y: auto; flex: 1;
+}
+.epub-toc-list::-webkit-scrollbar { width: 3px; }
+.epub-toc-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 2px; }
+.epub-toc-list li a {
+  display: block;
+  padding: .45rem 1rem;
+  font-size: .82rem;
+  color: #a09080;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: color .12s, background .12s, border-color .12s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.epub-toc-list li a:hover { color: #f5f0e8; background: rgba(255,255,255,.05); }
+.epub-toc-list li.active a {
+  color: #f5f0e8;
+  border-left-color: #c8a96e;
+  background: rgba(200,169,110,.12);
+  font-weight: 600;
+}
+.epub-toc-open-tab {
+  position: absolute; left: 0; top: 50%;
+  transform: translateY(-50%);
+  writing-mode: vertical-rl;
+  background: #2c2418; color: #a09080; border: none;
+  padding: .6rem .35rem; font-size: .72rem; letter-spacing: .06em;
+  cursor: pointer; border-radius: 0 6px 6px 0;
+  display: none; transition: color .15s; z-index: 5;
+}
+.epub-toc-open-tab:hover { color: #f5f0e8; }
 </style>
 
 <svg width="0" height="0" style="position:absolute; pointer-events:none;">
@@ -351,7 +432,7 @@
       {% if mode == "image" %}
         Spread {{ (page // 2) + 1 }} / {{ ((total_pages + 1) // 2) }}
       {% else %}
-        {{ page + 1 }} / {{ total_pages }}
+        Loading...
       {% endif %}
     </div>
   </div>
@@ -401,27 +482,28 @@
   </div>
 
   {% elif mode == "text" %}
-  <!-- ══════════════════════════════════════════════════════════ -->
-  <!-- TEXT READER — EPUB / MOBI flowing text                    -->
-  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- EPUB / MOBI: left TOC + single scrollable page -->
   <div class="text-reader-wrap">
-    <div class="text-book-stage" id="text-stage">
-      <div class="text-chapter-title" id="ch-title">{{ current_chapter.title }}</div>
-      <div id="ch-content">{{ current_chapter.html | safe }}</div>
+
+    <!-- TOC sidebar (populated by epub.js) -->
+    <aside class="epub-toc-sidebar" id="epub-toc-sidebar">
+      <div class="epub-toc-header">
+        <span class="epub-toc-header-label">📑 Contents</span>
+        <button class="epub-toc-toggle-btn" id="epub-toc-close" title="Collapse">‹</button>
+      </div>
+      <ul class="epub-toc-list">
+        <!-- Javascript fills this -->
+      </ul>
+    </aside>
+    <button class="epub-toc-open-tab" id="epub-toc-open">Contents</button>
+
+    <!-- Single page with epub.js viewer -->
+    <div class="epub-stage-wrap">
+      <div class="epub-page-wrap" id="epub-viewer">
+        <!-- epub.js will mount its iframes here -->
+      </div>
     </div>
 
-    {% if chapters %}
-    <details class="book-reader-toc" style="margin-top:.75rem;">
-      <summary class="book-reader-toc-toggle">📑 Table of Contents ({{ chapters|length }} chapters)</summary>
-      <ul class="book-reader-toc-list">
-        {% for ch in chapters %}
-        <li class="{{ 'active' if ch.index == page else '' }}">
-          <a href="#" data-page="{{ ch.index }}" class="toc-link">{{ ch.title }}</a>
-        </li>
-        {% endfor %}
-      </ul>
-    </details>
-    {% endif %}
   </div>
   {% endif %}
 
@@ -441,9 +523,14 @@
 <script>
 const COLL  = "{{ collection.slug }}";
 const FNAME = "{{ fname }}";
-const TOTAL = {{ total_pages }};
 const MODE  = "{{ mode }}";
+{% if mode == "image" %}
+const TOTAL = {{ total_pages }};
 let   CURRENT = {{ page }};
+{% else %}
+const TOTAL = 0;
+let   CURRENT = 0;
+{% endif %}
 
 /* ─── Utility ──────────────────────────────────────────────────── */
 let currentZoom = 100;
@@ -679,69 +766,137 @@ if (MODE === 'image') {
 }
 
 /* ═══════════════════════════════════════════════════════════════ */
-/*  TEXT MODE — smooth page-turn opacity transition               */
+/*  TEXT MODE — epub.js client-side rendering                     */
 /* ═══════════════════════════════════════════════════════════════ */
 if (MODE === 'text') {
-  const stage   = document.getElementById('text-stage');
-  const chTitle = document.getElementById('ch-title');
-  const chBody  = document.getElementById('ch-content');
-  const btnPrev = document.getElementById('btn-prev');
-  const btnNext = document.getElementById('btn-next');
-  let busy = false;
+  const viewer   = document.getElementById('epub-viewer');
+  const btnPrev  = document.getElementById('btn-prev');
+  const btnNext  = document.getElementById('btn-next');
+  const bookUrl  = "{{ book_url }}";
 
-  function updateTextControls() {
-    btnPrev.disabled = CURRENT <= 0;
-    btnNext.disabled = CURRENT >= TOTAL - 1;
-    setCounter(CURRENT);
-    setProgress(CURRENT);
-    pushState(CURRENT);
-    /* update TOC active */
+  // Init epub.js
+  const book = ePub(bookUrl);
+  const rendition = book.renderTo("epub-viewer", {
+    width: "100%",
+    height: "100%",
+    spread: "two", // Force 2-page spread if space allows
+    manager: "continuous",
+    flow: "paginated"
+  });
+
+  // Apply base theme
+  rendition.themes.default({
+    "html": { "padding": "0", "margin": "0" },
+    "body": { "padding": "2rem", "margin": "0", "font-family": "Georgia, serif", "font-size": "1.05rem", "line-height": "1.9", "color": "#2d2318", "background": "#f5f0e8", "text-align": "justify" },
+    "a": { "color": "#6b4c2a" }
+  });
+
+  rendition.display();
+
+  // ── TOC & Location tracking ──────────────────────────────────
+  book.ready.then(() => {
+    // Generate locations for progress bar
+    return book.locations.generate(1600);
+  }).then(locations => {
+    updateProgress();
+  });
+
+  rendition.on("relocated", function(location) {
+    // Enable/disable buttons based on start/end
+    btnPrev.disabled = location.atStart;
+    btnNext.disabled = location.atEnd;
+
+    // Update progress
+    if (book.locations.length() > 0) {
+      const percentage = book.locations.percentageFromCfi(location.start.cfi);
+      const pct = Math.round(percentage * 100);
+      document.getElementById('progress-fill').style.width = pct + '%';
+      document.getElementById('progress-text').textContent = pct + '%';
+      document.getElementById('page-counter').textContent = pct + '% Read';
+    }
+
+    // Highlight TOC based on current href
     document.querySelectorAll('.toc-link').forEach(a => {
-      a.parentElement.classList.toggle('active', +a.dataset.page === CURRENT);
+      // Very basic TOC matching: if the href starts with the TOC link
+      const href = a.dataset.href;
+      if (href && location.start.href.includes(href)) {
+        document.querySelectorAll('.toc-link').forEach(link => link.parentElement.classList.remove('active'));
+        a.parentElement.classList.add('active');
+        a.parentElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
     });
-  }
-
-  async function goToPage(n) {
-    if (busy || n < 0 || n >= TOTAL) return;
-    busy = true;
-    /* Fade out */
-    stage.style.transition = 'opacity .3s, transform .3s';
-    stage.style.opacity = '0';
-    stage.style.transform = n > CURRENT ? 'rotateY(-8deg)' : 'rotateY(8deg)';
-
-    const resp = await fetch(`/books/${COLL}/resources/${FNAME}/read?page=${n}`);
-    const html = await resp.text();
-    const doc  = new DOMParser().parseFromString(html, 'text/html');
-    const newTitle = doc.getElementById('ch-title')?.textContent || '';
-    const newBody  = doc.getElementById('ch-content')?.innerHTML || '';
-
-    setTimeout(() => {
-      chTitle.textContent = newTitle;
-      chBody.innerHTML    = newBody;
-      CURRENT = n;
-      updateTextControls();
-      stage.style.transition = 'none';
-      stage.style.transform = n > CURRENT ? 'rotateY(8deg)' : 'rotateY(-8deg)';
-      requestAnimationFrame(() => {
-        stage.style.transition = 'opacity .35s, transform .35s';
-        stage.style.opacity = '1';
-        stage.style.transform = 'rotateY(0deg)';
-        stage.scrollTop = 0;
-        setTimeout(() => { busy = false; }, 350);
-      });
-    }, 300);
-  }
-
-  updateTextControls();
-  btnNext.addEventListener('click', () => goToPage(CURRENT + 1));
-  btnPrev.addEventListener('click', () => goToPage(CURRENT - 1));
-  document.querySelectorAll('.toc-link').forEach(a => {
-    a.addEventListener('click', e => { e.preventDefault(); goToPage(+a.dataset.page); });
   });
+
+  // ── Navigation ────────────────────────────────────────────────
+  btnNext.addEventListener('click', () => rendition.next());
+  btnPrev.addEventListener('click', () => rendition.prev());
+
   document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goToPage(CURRENT + 1); }
-    if (e.key === 'ArrowLeft')                   { e.preventDefault(); goToPage(CURRENT - 1); }
+    if (e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); rendition.next(); }
+    if (e.key === 'ArrowLeft')                   { e.preventDefault(); rendition.prev(); }
   });
+
+  // ── TOC rendering ──────────────────────────────────────────────
+  const tocList = document.querySelector('.epub-toc-list');
+  book.loaded.navigation.then(function(toc) {
+    if (tocList) {
+      tocList.innerHTML = '';
+      toc.forEach(function(chapter) {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.textContent = chapter.label;
+        a.className = 'toc-link';
+        a.dataset.href = chapter.href;
+        a.href = "#";
+        a.onclick = function(e) {
+          e.preventDefault();
+          rendition.display(chapter.href);
+        };
+        li.appendChild(a);
+        tocList.appendChild(li);
+      });
+    }
+  });
+
+  // ── TOC sidebar toggle ────────────────────────────────────────
+  const tocSidebar = document.getElementById('epub-toc-sidebar');
+  const tocClose   = document.getElementById('epub-toc-close');
+  const tocOpen    = document.getElementById('epub-toc-open');
+  function collapseToc() {
+    if (!tocSidebar) return;
+    tocSidebar.classList.add('collapsed');
+    if (tocOpen) tocOpen.style.display = 'block';
+    localStorage.setItem('epubTocCollapsed', '1');
+    setTimeout(() => rendition.resize(), 300); // trigger resize after animation
+  }
+  function expandToc() {
+    if (!tocSidebar) return;
+    tocSidebar.classList.remove('collapsed');
+    if (tocOpen) tocOpen.style.display = 'none';
+    localStorage.setItem('epubTocCollapsed', '0');
+    setTimeout(() => rendition.resize(), 300); // trigger resize after animation
+  }
+  if (tocClose) tocClose.addEventListener('click', collapseToc);
+  if (tocOpen)  tocOpen.addEventListener('click',  expandToc);
+  if (localStorage.getItem('epubTocCollapsed') === '1') collapseToc();
+
+  // Zoom handling for text mode (overriding the default implementation)
+  const zoomLevelText = document.getElementById('zoom-level');
+  let currentEpubZoom = 100;
+  
+  function applyEpubZoom() {
+    zoomLevelText.textContent = currentEpubZoom + '%';
+    rendition.themes.fontSize(currentEpubZoom + "%");
+  }
+
+  document.getElementById('btn-zoom-in').addEventListener('click', () => {
+    if (currentEpubZoom < 300) { currentEpubZoom += 10; applyEpubZoom(); }
+  });
+  document.getElementById('btn-zoom-out').addEventListener('click', () => {
+    if (currentEpubZoom > 50) { currentEpubZoom -= 10; applyEpubZoom(); }
+  });
+
 }
 
 /* ── Progress init for both modes ────────────────────────────── */
