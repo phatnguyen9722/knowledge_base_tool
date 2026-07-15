@@ -1,6 +1,35 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }} – Knowledge Base{% endblock %}
 
+{# Series dashboard injected into the global left sidebar slot #}
+{% block sidebar %}
+  {% if series %}
+  <nav class="series-nav" aria-label="Series dashboard" style="padding-top: 1rem;">
+    <div class="series-head" style="margin-bottom: 1rem; position: relative;">
+      <button id="close-series-btn" class="btn btn-ghost" title="Hide Dashboard"
+              style="position: absolute; right: 0; top: 0; padding: 0.2rem 0.5rem; font-size: 1rem;">✖</button>
+      <div style="font-size: 1.8rem; margin-bottom: 0.5rem;">📚</div>
+      <h2 style="font-size: 1.1rem; margin: 0 0 0.2rem 0; color: var(--accent);">{{ series.name }}</h2>
+      <div class="muted" style="font-size: 0.85rem;">Part {{ series.number }} of {{ series.total }}</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+      {% for p in series.members %}
+      <a href="/posts/{{ p.slug }}"
+         style="display: flex; gap: 0.8rem; padding: 0.6rem; border-radius: 8px; text-decoration: none; color: inherit;
+                background: {{ 'var(--bg-alt, var(--card))' if p.slug == series.current else 'transparent' }};
+                border: 1px solid {{ 'var(--border)' if p.slug == series.current else 'transparent' }};
+                transition: background 0.2s;"
+         onmouseover="this.style.background='var(--card)'"
+         onmouseout="this.style.background='{{ 'var(--bg-alt, var(--card))' if p.slug == series.current else 'transparent' }}'">
+        <div style="font-family: monospace; color: var(--muted); font-size: 0.9rem; padding-top: 0.1rem; flex-shrink: 0;">{{ p.series_order }}</div>
+        <div style="font-size: 0.9rem; line-height: 1.3; font-weight: {{ '600' if p.slug == series.current else 'normal' }};">{{ p.title }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </nav>
+  {% endif %}
+{% endblock %}
+
 {% block content %}
   <div class="detail-wrap">
     <article class="post">
@@ -23,21 +52,6 @@
         </div>
       </header>
 
-      {% if series %}
-      <nav class="series-box" aria-label="Series navigation">
-        <div class="series-head">📚 Series: <strong>{{ series.name }}</strong>
-          <span class="muted">· part {{ series.number }} of {{ series.total }}</span>
-        </div>
-        <ol>
-          {% for p in series.members %}
-          <li class="{{ 'current' if p.slug == series.current else '' }}">
-            {% if p.slug == series.current %}{{ p.title }}{% else %}<a href="/posts/{{ p.slug }}">{{ p.title }}</a>{% endif %}
-          </li>
-          {% endfor %}
-        </ol>
-      </nav>
-      {% endif %}
-
       <div class="markdown">
         {{ content_html | safe }}
       </div>
@@ -50,8 +64,31 @@
       {% endif %}
     </article>
 
+    {# Floating "open series" button — only shown when sidebar is hidden #}
+    {% if series %}
+    <button id="toggle-series-btn" class="btn btn-primary floating-toggle-btn"
+            title="Show Series Dashboard"
+            style="position: fixed; left: 0; top: 120px; z-index: 50;
+                   border-top-left-radius: 0; border-bottom-left-radius: 0;
+                   padding: 0.5rem 0.8rem;
+                   box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+                   transition: opacity 0.2s; display: none;">
+      ▶ Series
+    </button>
+    {% endif %}
+
+    {# TOC toggle button + panel #}
     {% if toc|length >= 2 %}
-    <aside class="toc-rail">
+    <button id="toggle-toc-btn" class="btn btn-primary floating-toggle-btn"
+            title="Toggle Table of Contents"
+            style="position: fixed; right: 0; top: 120px; z-index: 50;
+                   border-top-right-radius: 0; border-bottom-right-radius: 0;
+                   padding: 0.5rem 0.8rem;
+                   box-shadow: -2px 2px 8px rgba(0,0,0,0.2);
+                   transition: opacity 0.2s;">
+      <span id="toc-icon">▶</span> TOC
+    </button>
+    <aside class="toc-rail" id="toc-rail">
       <nav class="toc" aria-label="Table of contents">
         <h2>Contents</h2>
         <ul>
@@ -63,4 +100,69 @@
     </aside>
     {% endif %}
   </div>
+
+  <script>
+    const layoutContainer = document.querySelector('.layout');
+
+    // ── Series dashboard toggle ──────────────────────────────────────
+    const tsBtn      = document.getElementById('toggle-series-btn');
+    const closeTsBtn = document.getElementById('close-series-btn');
+    const sidebar    = document.querySelector('.sidebar');
+
+    if (sidebar && document.querySelector('.series-nav')) {
+      const openSeries = () => {
+        sidebar.style.display = 'block';
+        if (layoutContainer) layoutContainer.style.paddingLeft = '';
+        if (tsBtn) tsBtn.style.display = 'none';
+        localStorage.setItem('seriesCollapsed', 'false');
+      };
+      const closeSeries = () => {
+        sidebar.style.display = 'none';
+        if (layoutContainer) layoutContainer.style.paddingLeft = '1.5rem';
+        if (tsBtn) tsBtn.style.display = 'block';
+        localStorage.setItem('seriesCollapsed', 'true');
+      };
+
+      // Restore state
+      if (localStorage.getItem('seriesCollapsed') === 'true') {
+        closeSeries();
+      }
+
+      if (tsBtn)      tsBtn.addEventListener('click', openSeries);
+      if (closeTsBtn) closeTsBtn.addEventListener('click', closeSeries);
+    }
+
+    // ── TOC toggle ───────────────────────────────────────────────────
+    const tocBtn  = document.getElementById('toggle-toc-btn');
+    const tocRail = document.getElementById('toc-rail');
+    const tocIcon = document.getElementById('toc-icon');
+
+    if (tocBtn && tocRail) {
+      const openToc = () => {
+        tocRail.style.display = 'block';
+        if (layoutContainer) layoutContainer.style.paddingRight = '280px';
+        tocBtn.style.right = '250px';
+        tocIcon.innerText = '▶';
+        localStorage.setItem('tocCollapsed', 'false');
+      };
+      const closeToc = () => {
+        tocRail.style.display = 'none';
+        if (layoutContainer) layoutContainer.style.paddingRight = '1.5rem';
+        tocBtn.style.right = '0';
+        tocIcon.innerText = '◀';
+        localStorage.setItem('tocCollapsed', 'true');
+      };
+
+      // Restore state — default to closed so button is visible
+      if (localStorage.getItem('tocCollapsed') === 'false') {
+        openToc();
+      } else {
+        closeToc();
+      }
+
+      tocBtn.addEventListener('click', () => {
+        if (tocRail.style.display === 'none') openToc(); else closeToc();
+      });
+    }
+  </script>
 {% endblock %}
